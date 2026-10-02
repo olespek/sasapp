@@ -9,7 +9,7 @@ export default defineConfig({
       '/api': { target: 'http://localhost:3001', changeOrigin: false },
     },
   },
-  build: { outDir: 'dist' },
+  build: { outDir: 'dist', chunkSizeWarningLimit: 1000 },
   test: {
     environment: 'node',
     include: ['server/**/*.test.ts', 'shared/**/*.test.ts'],
