@@ -118,6 +118,10 @@ export function createApp(db: DB, opts: AppOptions = {}) {
     return o.name ? `${base} «${o.name}»` : base;
   };
 
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true });
+  });
+
   // ---------- Innlogging ----------
 
   app.post('/api/auth/login', (req, res) => {

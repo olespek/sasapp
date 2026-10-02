@@ -29,16 +29,11 @@ Ved første oppstart opprettes brukeren `admin`, og et tilfeldig passord skrives
 
 ## Produksjon
 
+Se **[DRIFT.md](DRIFT.md)** for steg-for-steg-oppsett på Fly.io (anbefalt) eller med Docker andre steder.
+
 ```bash
 npm run build
 npm start          # serverer både API og klient på PORT (standard 3001)
-```
-
-Eller med Docker:
-
-```bash
-docker build -t sasapp .
-docker run -p 3001:3001 -v sasapp-data:/app/data -e ADMIN_PASSWORD=... sasapp
 ```
 
 Miljøvariabler:
@@ -49,7 +44,7 @@ Miljøvariabler:
 | `DATABASE_PATH` | `data/sasapp.db` | Hvor databasen lagres. Ta sikkerhetskopi av denne fila. |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `admin` / tilfeldig | Brukes bare når databasen er tom |
 
-Kjør appen bak HTTPS, for eksempel via en reverse proxy eller en vertstjeneste med TLS. Innloggingscookien blir da `Secure` automatisk.
+Kjør appen bak HTTPS. Innloggingscookien blir da `Secure` automatisk.
 
 ## Utvikling
 
