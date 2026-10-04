@@ -49,16 +49,18 @@ export function Sidebar(props: Props) {
 
   return (
     <aside className="sidebar">
-      <nav className="tabs">
-        {tabs.map((t) => (
-          <button key={t.id} className={current === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-        <button className="tabs-close" onClick={props.onClose} title="Lukk panel">
+      <div className="sidebar-head">
+        <nav className="tabs" role="tablist">
+          {tabs.map((t) => (
+            <button key={t.id} role="tab" aria-selected={current === t.id} className={current === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+        <button className="icon-btn sidebar-close" onClick={props.onClose} title="Lukk panel">
           ✕
         </button>
-      </nav>
+      </div>
       <div className="sidebar-body">
         {current === 'objects' && <ObjectList {...props} />}
         {current === 'summary' && <Summary objects={props.objects} onFocus={props.onFocus} />}
