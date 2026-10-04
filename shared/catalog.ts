@@ -86,6 +86,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
 
   // Logistikk
   { id: 'parkering', label: 'Bilparkering', kind: 'polygon', group: 'logistikk', color: '#475569', icon: 'car' },
+  { id: 'hcparkering', label: 'HC-parkering', kind: 'polygon', group: 'logistikk', color: '#1d4ed8', icon: 'accessibility' },
   { id: 'lager', label: 'Lager/rigg', kind: 'polygon', group: 'logistikk', color: '#92400e', icon: 'package' },
   { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: 'truck', dash: '14 8', retired: true },
   { id: 'port', label: 'Port/kjøreport', kind: 'point', group: 'logistikk', color: '#334155', icon: 'door-closed' },

@@ -2,6 +2,7 @@
 // slik at resten ikke havner i bygget. Navnene er Lucides egne (kebab-case).
 
 import {
+  Accessibility,
   Ambulance,
   BrickWall,
   BriefcaseMedical,
@@ -62,6 +63,7 @@ import {
 } from 'lucide';
 
 const ICONS: Record<string, IconNode> = {
+  accessibility: Accessibility,
   ambulance: Ambulance,
   'brick-wall': BrickWall,
   'briefcase-medical': BriefcaseMedical,
