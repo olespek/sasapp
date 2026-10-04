@@ -46,7 +46,15 @@ Når kommandoen er ferdig, ligger appen på `https://sola-airshow-arenaplan.fly.
 
 ## 4. Oppdateringer
 
-Etter endringer i koden kjører du `fly deploy` igjen. Databasen ligger på volumet og blir ikke berørt.
+Appen publiseres automatisk med GitHub Actions (`.github/workflows/fly-deploy.yml`) ved hver push. Før publisering kjøres tester og typesjekk, og feiler de, publiseres ingenting. Databasen ligger på volumet og blir ikke berørt.
+
+Engangsoppsett:
+
+1. Lag en publiseringsnøkkel (kjøres i prosjektmappen): `fly tokens create deploy -x 999999h`
+2. Kopier hele nøkkelen. Den begynner med `FlyV1`.
+3. På GitHub går du til repoet → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**. Gi den navnet `FLY_API_TOKEN` og lim inn nøkkelen.
+
+Du kan også publisere manuelt med `fly deploy` fra prosjektmappen.
 
 ## 5. Egen adresse (valgfritt)
 
