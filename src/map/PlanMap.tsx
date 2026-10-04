@@ -4,6 +4,7 @@ import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
+import { MeasureControl } from './MeasureControl';
 import { PlanLayer, pinIcon } from './planLayer';
 import { Icon } from '../icons';
 
@@ -196,7 +197,12 @@ function Controller(props: Props) {
     };
   }, [map, props.drawType]);
 
-  return <LocateControl />;
+  return (
+    <>
+      <LocateControl />
+      <MeasureControl disabled={!!props.drawType} />
+    </>
+  );
 }
 
 /** Viser egen GPS-posisjon, nyttig ute på området. */

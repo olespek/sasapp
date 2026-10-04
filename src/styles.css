@@ -889,6 +889,85 @@ table.summary .sub {
   z-index: 800;
 }
 
+.measure-btn {
+  position: absolute;
+  right: 12px;
+  top: 224px;
+  z-index: 800;
+}
+
+.map-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.measuring,
+.measuring .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
+/* Objektene i kartet skal ikke fange klikk mens man måler. */
+.measuring .leaflet-interactive {
+  pointer-events: none !important;
+}
+
+.measure-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 900;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 300px;
+  max-width: calc(100% - 24px);
+}
+
+.measure-panel .btn .icon {
+  margin-right: 4px;
+}
+
+.measure-panel .btn {
+  display: inline-flex;
+  align-items: center;
+}
+
+.measure-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.measure-total b {
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.measure-hint {
+  color: var(--muted);
+}
+
+.leaflet-tooltip.measure-label {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(4, 25, 43, 0.35);
+}
+
+.leaflet-tooltip.measure-label::before {
+  display: none;
+}
+
 .locate-error {
   position: absolute;
   right: 44px;
