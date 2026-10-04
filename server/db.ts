@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { AIRCRAFT } from '../shared/aircraft.js';
 
 export type DB = DatabaseSync;
 
@@ -56,6 +57,11 @@ const MIGRATIONS: string[] = [
     at TEXT NOT NULL
   );
   `,
+  // Fly uten navn får navnet fra flymodellen.
+  `UPDATE objects SET name = CASE json_extract(props, '$.aircraftModel')
+     ${AIRCRAFT.map((a) => `WHEN '${a.id}' THEN '${a.name.replace(/'/g, "''")}'`).join(' ')}
+     ELSE name END
+   WHERE type = 'fly' AND name = '';`,
 ];
 
 export function openDb(path: string): DB {

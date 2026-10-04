@@ -1,3 +1,6 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app.js';
@@ -96,6 +99,32 @@ describe('objekter og rettigheter', () => {
     await a.post('/api/objects').set(H).send({ type: 'fly', geometry, props: { aircraftModel: 'ukjent' } }).expect(400);
     const res = await a.post('/api/objects').set(H).send({ type: 'fly', geometry, props: { aircraftModel: 'f16', heading: -90 } }).expect(201);
     expect(res.body.props.heading).toBe(270);
+  });
+
+  it('fly får navn fra flymodellen, men eget navn beholdes', async () => {
+    const a = await login('red');
+    const geometry = { type: 'Point', coordinates: [5.644, 58.887] };
+    const f = (await a.post('/api/objects').set(H).send({ type: 'fly', geometry, props: { aircraftModel: 'f16' } }).expect(201)).body;
+    expect(f.name).toBe('General Dynamics F-16 Fighting Falcon');
+    const changed = (await a.patch(`/api/objects/${f.id}`).set(H).send({ props: { aircraftModel: 'c130j' } }).expect(200)).body;
+    expect(changed.name).toBe('Lockheed Martin C-130J Hercules');
+    await a.patch(`/api/objects/${f.id}`).set(H).send({ name: 'LN-ABC' }).expect(200);
+    const kept = (await a.patch(`/api/objects/${f.id}`).set(H).send({ props: { aircraftModel: 'p8a' } }).expect(200)).body;
+    expect(kept.name).toBe('LN-ABC');
+  });
+
+  it('migrering gir eksisterende fly uten navn modellnavnet', () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'sasapp-')), 'test.db');
+    const now = new Date().toISOString();
+    const old = openDb(file);
+    old.exec('PRAGMA user_version = 1');
+    old.prepare("INSERT INTO objects (id, type, name, geometry, props, created_at, updated_at) VALUES ('x', 'fly', '', '{}', ?, ?, ?)").run(JSON.stringify({ aircraftModel: 'spitfire' }), now, now);
+    old.prepare("INSERT INTO objects (id, type, name, geometry, props, created_at, updated_at) VALUES ('y', 'fly', 'LN-XYZ', '{}', ?, ?, ?)").run(JSON.stringify({ aircraftModel: 'spitfire' }), now, now);
+    old.close();
+    const upgraded = openDb(file);
+    expect(repo.getObject(upgraded, 'x')!.name).toBe('Supermarine Spitfire');
+    expect(repo.getObject(upgraded, 'y')!.name).toBe('LN-XYZ');
+    upgraded.close();
   });
 });
 

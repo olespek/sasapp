@@ -221,6 +221,8 @@ export function createApp(db: DB, opts: AppOptions = {}) {
       createdAt: now,
       updatedAt: now,
     };
+    // Fly får navnet fra flymodellen hvis ikke noe annet er oppgitt.
+    if (isAircraft && !obj.name) obj.name = getAircraft(obj.props.aircraftModel)?.name ?? '';
     repo.insertObject(db, obj);
     hub.broadcast({ kind: 'object-upsert', object: obj });
     log(req, 'create', `La til ${describe(obj)}`, obj.id);
@@ -242,6 +244,11 @@ export function createApp(db: DB, opts: AppOptions = {}) {
     if (body.name !== undefined) updated.name = v.name(body.name);
     if (body.geometry !== undefined) updated.geometry = v.geometry(body.geometry, v.expectedGeometryType(updated.type));
     if (body.props !== undefined) updated.props = v.props(body.props, existing.props, isAircraft);
+    // Ny flymodell: bytt navnet også, med mindre det er satt til noe eget (f.eks. registrering).
+    if (isAircraft && body.name === undefined && updated.props.aircraftModel !== existing.props.aircraftModel) {
+      const oldModelName = getAircraft(existing.props.aircraftModel)?.name ?? '';
+      if (!existing.name || existing.name === oldModelName) updated.name = getAircraft(updated.props.aircraftModel)?.name ?? '';
+    }
     updated.updatedBy = who(req);
     updated.updatedAt = new Date().toISOString();
     repo.saveObject(db, updated);
