@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
+import { Logo } from './Logo';
 
 export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   const [username, setUsername] = useState('');
@@ -24,9 +25,12 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   return (
     <div className="center-screen login-bg">
       <form className="card login" onSubmit={submit}>
-        <div className="login-mark">✈</div>
-        <h1>Sola Airshow</h1>
-        <p className="muted">Planlegging av arenaen</p>
+        <div className="login-logo">
+          <Logo />
+        </div>
+        <span className="pill">Arenaplan</span>
+        <h1>Planlegging av arenaen</h1>
+        <p className="muted">Logg inn for å se og redigere planen.</p>
         <label>
           Brukernavn
           <input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />

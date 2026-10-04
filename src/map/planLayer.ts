@@ -18,6 +18,9 @@ interface Entry {
   handles: L.Marker[];
 }
 
+/** Fremhevingsfarge for valgt objekt (samme røde som knappene). */
+const SELECT_COLOR = '#ef3b3b';
+
 const toLatLng = (p: Position): L.LatLngExpression => [p[1], p[0]];
 const fromLatLng = (ll: L.LatLng): Position => [round(ll.lng), round(ll.lat)];
 const round = (n: number) => Math.round(n * 1e7) / 1e7;
@@ -146,7 +149,7 @@ export class PlanLayer {
       layer = marker;
     } else {
       const style: L.PathOptions = {
-        color: selected ? '#f97316' : def.color,
+        color: selected ? SELECT_COLOR : def.color,
         weight: def.kind === 'line' ? (selected ? 6 : 4) : selected ? 3 : 2,
         dashArray: def.dash,
         fillColor: def.color,
@@ -197,7 +200,7 @@ export class PlanLayer {
       group.addLayer(L.marker(toLatLng(center), { icon: pinIcon(def, o, selected), pmIgnore: true } as L.MarkerOptions));
       return group;
     }
-    const color = selected ? '#f97316' : def.color;
+    const color = selected ? SELECT_COLOR : def.color;
     let shapes = aircraftShapes(spec, center, heading);
     const body = L.polygon(shapes.body.map(toLatLng), {
       color,

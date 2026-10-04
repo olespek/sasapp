@@ -4,6 +4,7 @@ import { canEditPlan, ROLE_LABELS, type Access, type Activity, type Geometry, ty
 import { ApiError, api, shareToken, subscribe } from './api';
 import { Details } from './components/Details';
 import { Login } from './components/Login';
+import { Logo } from './components/Logo';
 import { PasswordDialog } from './components/PasswordDialog';
 import { Palette } from './components/Palette';
 import { Sidebar, type Tab } from './components/Sidebar';
@@ -201,7 +202,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           ☰
         </button>
         <div className="brand">
-          <span className="brand-mark">✈</span>
+          <Logo />
           <span className="brand-name">{plan.name}</span>
         </div>
         <span className={`badge ${plan.locked ? 'locked' : 'open'}`} title={plan.locked && plan.lockedBy ? `Låst av ${plan.lockedBy}` : undefined}>
