@@ -62,7 +62,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'lys', label: 'Lysmast', kind: 'point', group: 'infrastruktur', color: '#fde047', icon: '💡' },
 
   // Stander og servering
-  { id: 'expo', label: 'Expo-/standområde', kind: 'polygon', group: 'kommersielt', color: '#c026d3', icon: '🏷' },
+  { id: 'expo', label: 'Expo', kind: 'polygon', group: 'kommersielt', color: '#c026d3', icon: '🏷' },
   { id: 'stand', label: 'Stand', kind: 'polygon', group: 'kommersielt', color: '#a21caf', icon: '▣' },
   { id: 'mat', label: 'Mat og drikke', kind: 'polygon', group: 'kommersielt', color: '#ea580c', icon: '🍔' },
   { id: 'kiosk', label: 'Kiosk/foodtruck', kind: 'point', group: 'kommersielt', color: '#ea580c', icon: '🍦' },

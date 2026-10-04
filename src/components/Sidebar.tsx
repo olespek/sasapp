@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
 import { GROUPS, OBJECT_TYPES, getObjectType } from '../../shared/catalog';
-import { formatArea, formatLength, measure } from '../../shared/geo';
+import { formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
 import { api } from '../api';
 import type { MapApi } from '../map/PlanMap';
@@ -254,9 +254,13 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
                       <td className="sw">
                         <TypeSwatch def={t} />
                       </td>
-                      <td className="grow">{t.label}</td>
+                      <td className="label">
+                        {t.label}
+                        {t.kind !== 'aircraft' && <span className="sub">{countLabel(t.kind, r.count)}</span>}
+                      </td>
                       <td className="num">
-                        {t.kind === 'point' ? `${r.qty} stk` : t.kind === 'line' ? formatLength(r.length) : t.kind === 'polygon' ? formatArea(r.area) : `${r.count} fly`}
+                        {t.kind === 'point' ? `${r.qty} stk` : t.kind === 'line' ? formatLength(r.length) : t.kind === 'polygon' ? `${m2(r.area)} m²` : `${r.count} fly`}
+                        {t.kind === 'polygon' && r.area >= 1000 && <span className="sub">{daa(r.area)} daa</span>}
                       </td>
                     </tr>
                   );
@@ -274,8 +278,11 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
             <tbody>
               {aircraft.map(({ a, n }) => (
                 <tr key={a.id}>
-                  <td className="grow">{a.name}</td>
-                  <td className="num">{n}</td>
+                  <td className="label">
+                    {a.name}
+                    <span className="sub">{a.category}</span>
+                  </td>
+                  <td className="num">{n} stk</td>
                 </tr>
               ))}
             </tbody>
@@ -285,6 +292,15 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
       <p className="muted small">For punkter brukes «Antall» hvis det er fylt ut, ellers teller hvert punkt som 1.</p>
     </div>
   );
+}
+
+const m2 = (v: number) => Math.round(v).toLocaleString('nb-NO');
+const daa = (v: number) => (v / 1000).toLocaleString('nb-NO', { maximumFractionDigits: 1 });
+
+function countLabel(kind: string, n: number): string {
+  if (kind === 'polygon') return n === 1 ? '1 område' : `${n} områder`;
+  if (kind === 'line') return n === 1 ? '1 strekning' : `${n} strekninger`;
+  return n === 1 ? '1 punkt' : `${n} punkter`;
 }
 
 // ---------- Lag ----------
