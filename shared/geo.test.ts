@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, aircraftShapes } from './aircraft.js';
+import { getObjectType, panelCount } from './catalog.js';
 import { bearing, distance, offset, polygonArea } from './geo.js';
 import type { Position } from './types.js';
 
@@ -36,5 +37,14 @@ describe('flysiluetter', () => {
     const spec = AIRCRAFT.find((a) => a.id === 'c130j')!;
     const { nose } = aircraftShapes(spec, SOLA, 90);
     expect(bearing(SOLA, nose)).toBeCloseTo(90, 0);
+  });
+});
+
+describe('gjerdeelementer', () => {
+  it('runder opp til hele elementer', () => {
+    expect(panelCount(getObjectType('gjerde'), 35)).toBe(10);
+    expect(panelCount(getObjectType('gjerde'), 35.1)).toBe(11);
+    expect(panelCount(getObjectType('gjerde_lavt'), 9)).toBe(5);
+    expect(panelCount(getObjectType('fastgjerde'), 100)).toBeNull();
   });
 });

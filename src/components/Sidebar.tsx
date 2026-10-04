@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
-import { GROUPS, OBJECT_TYPES, getObjectType } from '../../shared/catalog';
+import { GROUPS, OBJECT_TYPES, getObjectType, panelCount } from '../../shared/catalog';
 import { formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
 import { api } from '../api';
@@ -183,13 +183,16 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
 
 function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: string): void }) {
   const byType = useMemo(() => {
-    const map = new Map<string, { count: number; qty: number; length: number; area: number }>();
+    const map = new Map<string, { count: number; qty: number; length: number; area: number; panels: number }>();
     for (const o of objects) {
-      const r = map.get(o.type) ?? { count: 0, qty: 0, length: 0, area: 0 };
+      const r = map.get(o.type) ?? { count: 0, qty: 0, length: 0, area: 0, panels: 0 };
       const m = measure(o.geometry);
       r.count++;
       r.qty += o.props.quantity ?? 1;
-      if (o.geometry.type === 'LineString') r.length += m.length ?? 0;
+      if (o.geometry.type === 'LineString') {
+        r.length += m.length ?? 0;
+        r.panels += panelCount(getObjectType(o.type), m.length ?? 0) ?? 0;
+      }
       if (o.geometry.type === 'Polygon') r.area += m.area ?? 0;
       map.set(o.type, r);
     }
@@ -261,6 +264,7 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
                       <td className="num">
                         {t.kind === 'point' ? `${r.qty} stk` : t.kind === 'line' ? formatLength(r.length) : t.kind === 'polygon' ? `${m2(r.area)} m²` : `${r.count} fly`}
                         {t.kind === 'polygon' && r.area >= 1000 && <span className="sub">{daa(r.area)} daa</span>}
+                        {t.kind === 'line' && t.panelLength && <span className="sub">ca. {r.panels} elementer</span>}
                       </td>
                     </tr>
                   );

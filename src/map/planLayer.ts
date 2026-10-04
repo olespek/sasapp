@@ -150,7 +150,7 @@ export class PlanLayer {
     } else {
       const style: L.PathOptions = {
         color: selected ? SELECT_COLOR : def.color,
-        weight: def.kind === 'line' ? (selected ? 6 : 4) : selected ? 3 : 2,
+        weight: def.kind === 'line' ? (def.weight ?? 4) + (selected ? 2 : 0) : selected ? 3 : 2,
         dashArray: def.dash,
         fillColor: def.color,
         fillOpacity: o.props.status === 'idea' ? 0.12 : 0.28,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
-import { OBJECT_TYPES, getObjectType } from '../../shared/catalog';
+import { ACTIVE_TYPES, getObjectType, panelCount } from '../../shared/catalog';
 import { formatArea, formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObject } from '../../shared/types';
 import type { api } from '../api';
@@ -21,7 +21,9 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
   const spec = getAircraft(o.props.aircraftModel);
   const m = measure(o.geometry);
   const setProps = (props: Partial<ObjectProps>) => onUpdate(o.id, { props });
-  const sameKind = OBJECT_TYPES.filter((t) => t.kind === def?.kind);
+  const sameKind = ACTIVE_TYPES.filter((t) => t.kind === def?.kind || t.id === o.type);
+  if (def?.retired && !sameKind.includes(def)) sameKind.unshift(def);
+  const panels = def?.kind === 'line' ? panelCount(def, m.length ?? 0) : null;
 
   return (
     <aside className="details card">
@@ -100,7 +102,10 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
                 Areal {formatArea(m.area)} · omkrets {formatLength(m.length ?? 0)}
               </>
             ) : (
-              <>Lengde {formatLength(m.length ?? 0)}</>
+              <>
+                Lengde {formatLength(m.length ?? 0)}
+                {panels !== null && ` · ca. ${panels} elementer à ${String(def!.panelLength).replace('.', ',')} m`}
+              </>
             )}
           </div>
         )}

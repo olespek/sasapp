@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { AIRCRAFT } from '../../shared/aircraft';
-import { GROUPS, OBJECT_TYPES, type ObjectTypeDef } from '../../shared/catalog';
+import { ACTIVE_TYPES, GROUPS, type ObjectTypeDef } from '../../shared/catalog';
 
 interface Props {
   open: boolean;
@@ -40,7 +40,8 @@ export function Palette({ open, setOpen, active, onPick }: Props) {
       {open && (
         <div className="palette-body">
           {GROUPS.map((g) => {
-            const types = OBJECT_TYPES.filter((t) => t.group === g.id);
+            const types = ACTIVE_TYPES.filter((t) => t.group === g.id);
+            if (types.length === 0) return null;
             const expanded = openGroup === g.id;
             return (
               <div key={g.id} className="palette-group">

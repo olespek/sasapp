@@ -63,6 +63,17 @@ describe('objekter og rettigheter', () => {
     await a.post('/api/objects').set(H).send({ type: 'publikumsomrade', geometry: polygon }).expect(403);
   });
 
+  it('utgåtte typer kan ikke legges til, men eksisterende kan fortsatt endres', async () => {
+    const a = await login('red');
+    const line = { type: 'LineString', coordinates: [[5.64, 58.887], [5.645, 58.887]] };
+    await a.post('/api/objects').set(H).send({ type: 'kjorevei', geometry: line }).expect(400);
+    const now = new Date().toISOString();
+    repo.insertObject(db, { id: 'gammel', type: 'kjorevei', name: '', geometry: line as never, props: { status: 'planned', responsible: '', supplier: '', quantity: null, dueDate: null, notes: '' }, createdBy: null, updatedBy: null, createdAt: now, updatedAt: now });
+    await a.patch('/api/objects/gammel').set(H).send({ name: 'Ny' }).expect(200);
+    await a.patch('/api/objects/gammel').set(H).send({ type: 'gjerde_lavt' }).expect(200);
+    await a.patch('/api/objects/gammel').set(H).send({ type: 'gangvei' }).expect(400);
+  });
+
   it('avviser feil geometritype', async () => {
     const a = await login('red');
     await a.post('/api/objects').set(H).send({ type: 'toalett', geometry: polygon }).expect(400);

@@ -57,15 +57,16 @@ export function name(v: unknown): string {
   return str(v, 200, 'Navn').trim();
 }
 
-export function objectType(v: unknown) {
+export function objectType(v: unknown, opts: { allowRetired?: boolean } = {}) {
   if (typeof v !== 'string') return fail('Objekttype mangler');
   const def = getObjectType(v as string);
   if (!def) fail(`Ukjent objekttype: ${v}`);
+  if (def!.retired && !opts.allowRetired) fail(`«${def!.label}» kan ikke lenger legges til`);
   return def!;
 }
 
 export function expectedGeometryType(typeId: string): Geometry['type'] {
-  return geometryTypeFor(objectType(typeId).kind);
+  return geometryTypeFor(objectType(typeId, { allowRetired: true }).kind);
 }
 
 /** Slår sammen eksisterende egenskaper med en (delvis) oppdatering og validerer resultatet. */

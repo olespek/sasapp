@@ -15,12 +15,20 @@ export interface ObjectTypeDef {
   icon: string;
   /** Stiplet linje/kant (Leaflet dashArray). */
   dash?: string;
+  /** Linjebredde i kartet (standard 4 for linjer). */
+  weight?: number;
+  /** For gjerder: lengden på ett element i meter, brukes til å beregne antall elementer. */
+  panelLength?: number;
+  /** Utgått type: kan ikke legges til, men eksisterende objekter vises fortsatt. */
+  retired?: boolean;
 }
 
-export type GroupId = 'publikum' | 'sikkerhet' | 'infrastruktur' | 'kommersielt' | 'logistikk' | 'fly';
+export type GroupId = 'publikum' | 'gjerde' | 'fastgjerde' | 'sikkerhet' | 'infrastruktur' | 'kommersielt' | 'logistikk' | 'fly';
 
 export const GROUPS: { id: GroupId; label: string }[] = [
   { id: 'publikum', label: 'Publikum' },
+  { id: 'gjerde', label: 'Gjerde' },
+  { id: 'fastgjerde', label: 'Fast gjerde' },
   { id: 'sikkerhet', label: 'Sikkerhet og beredskap' },
   { id: 'infrastruktur', label: 'Strøm og infrastruktur' },
   { id: 'kommersielt', label: 'Stander og servering' },
@@ -32,16 +40,23 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   // Publikum
   { id: 'publikumsomrade', label: 'Publikumsområde', kind: 'polygon', group: 'publikum', color: '#2563eb', icon: '👥' },
   { id: 'vip', label: 'VIP-område', kind: 'polygon', group: 'publikum', color: '#ca8a04', icon: '⭐' },
-  { id: 'tribune', label: 'Tribune', kind: 'polygon', group: 'publikum', color: '#4f46e5', icon: '🪑' },
+  { id: 'tribune', label: 'Spottertribune', kind: 'polygon', group: 'publikum', color: '#4f46e5', icon: '📷' },
   { id: 'inngang', label: 'Inngang', kind: 'point', group: 'publikum', color: '#16a34a', icon: '➜' },
-  { id: 'utgang', label: 'Utgang', kind: 'point', group: 'publikum', color: '#0d9488', icon: '⇠' },
+  { id: 'utgang', label: 'Utgang', kind: 'point', group: 'publikum', color: '#0d9488', icon: '⇠', retired: true },
   { id: 'toalett', label: 'Toalett', kind: 'point', group: 'publikum', color: '#0891b2', icon: 'WC' },
   { id: 'toalettomrade', label: 'Toalettområde', kind: 'polygon', group: 'publikum', color: '#0891b2', icon: 'WC' },
   { id: 'info', label: 'Informasjon', kind: 'point', group: 'publikum', color: '#2563eb', icon: 'i' },
-  { id: 'gangvei', label: 'Gangvei', kind: 'line', group: 'publikum', color: '#64748b', icon: '┄', dash: '4 6' },
+  { id: 'gangvei', label: 'Gangvei', kind: 'line', group: 'publikum', color: '#64748b', icon: '┄', dash: '4 6', retired: true },
+
+  // Gjerde (midlertidige gjerder som settes opp til showet). Id-en «gjerde» er beholdt for høyt gjerde
+  // slik at gjerder tegnet før inndelingen fortsatt fungerer.
+  { id: 'gjerde', label: 'Høyt gjerde (2000×3500)', kind: 'line', group: 'gjerde', color: '#111827', icon: '┼', weight: 5, panelLength: 3.5 },
+  { id: 'gjerde_lavt', label: 'Lavt gjerde (2000×1100)', kind: 'line', group: 'gjerde', color: '#64748b', icon: '┼', weight: 4, panelLength: 2 },
+
+  // Fast gjerde (områdegjerder som står der i dag)
+  { id: 'fastgjerde', label: 'Fast gjerde', kind: 'line', group: 'fastgjerde', color: '#a16207', icon: '▦', dash: '2 6', weight: 5 },
 
   // Sikkerhet og beredskap
-  { id: 'gjerde', label: 'Gjerde', kind: 'line', group: 'sikkerhet', color: '#111827', icon: '┼' },
   { id: 'sperrebaand', label: 'Sperrebånd', kind: 'line', group: 'sikkerhet', color: '#dc2626', icon: '⋯', dash: '6 6' },
   { id: 'nodutgang', label: 'Nødutgang', kind: 'point', group: 'sikkerhet', color: '#15803d', icon: '🚪' },
   { id: 'romningsvei', label: 'Rømningsvei', kind: 'line', group: 'sikkerhet', color: '#15803d', icon: '⇢', dash: '10 6' },
@@ -72,12 +87,13 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   // Logistikk
   { id: 'parkering', label: 'Parkering', kind: 'polygon', group: 'logistikk', color: '#475569', icon: 'P' },
   { id: 'lager', label: 'Lager/rigg', kind: 'polygon', group: 'logistikk', color: '#92400e', icon: '📦' },
-  { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: '═', dash: '14 8' },
+  { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: '═', dash: '14 8', retired: true },
   { id: 'port', label: 'Port/kjøreport', kind: 'point', group: 'logistikk', color: '#334155', icon: '⛩' },
   { id: 'telt', label: 'Telt', kind: 'polygon', group: 'logistikk', color: '#b45309', icon: '⛺' },
 
   // Fly
   { id: 'fly', label: 'Fly (static display)', kind: 'aircraft', group: 'fly', color: '#1e3a8a', icon: '✈' },
+  { id: 'displayline', label: 'Display line', kind: 'line', group: 'fly', color: '#ef3b3b', icon: '✈', dash: '16 6 2 6', weight: 3 },
   { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'fly', color: '#1d4ed8', icon: '🛬', dash: '6 4' },
   { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: '✈' },
 ];
@@ -86,6 +102,15 @@ const BY_ID = new Map(OBJECT_TYPES.map((t) => [t.id, t]));
 
 export function getObjectType(id: string): ObjectTypeDef | undefined {
   return BY_ID.get(id);
+}
+
+/** Typer som kan legges til (utgåtte typer er tatt ut). */
+export const ACTIVE_TYPES = OBJECT_TYPES.filter((t) => !t.retired);
+
+/** Antall gjerdeelementer som trengs for en gitt lengde, eller null om typen ikke har elementlengde. */
+export function panelCount(def: ObjectTypeDef | undefined, length: number): number | null {
+  if (!def?.panelLength || length <= 0) return null;
+  return Math.ceil(length / def.panelLength - 1e-9);
 }
 
 /** Geometritypen som hører til en objekttype. Fly lagres som punkt (midtpunkt). */

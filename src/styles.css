@@ -680,6 +680,12 @@ h4 {
   color: var(--c);
 }
 
+.obj-list li.selected .swatch.line,
+.details-head .swatch.line {
+  background-color: #fff;
+  border-radius: 6px;
+}
+
 .swatch.line {
   background: linear-gradient(to bottom, transparent 10px, var(--c) 10px, var(--c) 15px, transparent 15px);
 }
