@@ -116,7 +116,11 @@ function Controller(props: Props) {
     };
     map.on('baselayerchange', onBase as L.LeafletEventHandlerFn);
     map.on('click', onClick);
+    // Leaflet merker ikke selv at kartet får ny størrelse (f.eks. når sidepanelet lukkes).
+    const resize = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+    resize.observe(map.getContainer());
     return () => {
+      resize.disconnect();
       map.off('baselayerchange', onBase as L.LeafletEventHandlerFn);
       map.off('click', onClick);
       zoom.remove();
