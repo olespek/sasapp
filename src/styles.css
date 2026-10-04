@@ -1064,20 +1064,16 @@ table.summary .sub {
 }
 
 .area-icon {
-  --c: #333;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--c);
-  border: 2px solid var(--c);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
 }
 
-.area-icon.selected {
-  box-shadow: 0 0 0 3px var(--red), 0 1px 6px rgba(0, 0, 0, 0.5);
+.area-icon svg {
+  width: var(--area-icon-size, 26px);
+  height: var(--area-icon-size, 26px);
+  transition: width 0.15s, height 0.15s;
 }
 
 .area-icon.faded {
