@@ -1,9 +1,6 @@
-/** Sola Airshow-logo. Midlertidig tekstversjon, byttes med den offisielle SVG-en. */
-export function Logo() {
-  return (
-    <span className="logo" aria-label="Sola Airshow">
-      <span className="logo-mark">SA</span>
-      <span className="logo-text">SOLA AIRSHOW</span>
-    </span>
-  );
+import logoSvg from '../assets/logo.svg?raw';
+
+/** Offisiell Sola Airshow-logo. Fargen styres med CSS «color». */
+export function Logo({ className = '' }: { className?: string }) {
+  return <span className={`logo ${className}`} dangerouslySetInnerHTML={{ __html: logoSvg }} />;
 }

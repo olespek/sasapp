@@ -308,27 +308,18 @@ h4 {
 
 .logo {
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1;
   color: var(--navy);
-  text-decoration: none;
   flex-shrink: 0;
+  line-height: 0;
 }
 
-.logo-mark {
-  font-size: 22px;
-  font-weight: 800;
-  font-style: italic;
-  letter-spacing: -0.06em;
-  transform: skewX(-8deg);
+.logo svg {
+  height: 40px;
+  width: auto;
 }
 
-.logo-text {
-  font-size: 7.5px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  margin-top: 2px;
+.login-logo .logo svg {
+  height: 56px;
 }
 
 /* ---------- Hovedlayout ---------- */
