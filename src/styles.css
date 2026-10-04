@@ -1059,6 +1059,31 @@ table.summary .sub {
   line-height: 1;
 }
 
+.area-icon-wrap {
+  pointer-events: none !important;
+}
+
+.area-icon {
+  --c: #333;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--c);
+  border: 2px solid var(--c);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+}
+
+.area-icon.selected {
+  box-shadow: 0 0 0 3px var(--red), 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.area-icon.faded {
+  opacity: 0.6;
+}
+
 .pin.selected {
   box-shadow: 0 0 0 3px var(--red), 0 1px 6px rgba(0, 0, 0, 0.5);
 }

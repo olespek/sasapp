@@ -42,6 +42,17 @@ export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: bool
   });
 }
 
+/** Ikon midt i et område. Tar ikke imot klikk, så området under kan velges og dras. */
+function areaIcon(def: ObjectTypeDef, o: PlanObject, selected: boolean): L.DivIcon {
+  const cls = ['area-icon', selected ? 'selected' : '', o.props.status === 'idea' ? 'faded' : ''].join(' ');
+  return L.divIcon({
+    className: 'pin-wrap area-icon-wrap',
+    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, 16, 2.25)}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+}
+
 function handleIcon(icon: string, cls: string): L.DivIcon {
   return L.divIcon({ className: 'pin-wrap', html: `<div class="handle ${cls}">${iconSvg(icon, 15, 2.5)}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
 }
@@ -154,7 +165,7 @@ export class PlanLayer {
         weight: def.kind === 'line' ? (def.weight ?? 4) + (selected ? 2 : 0) : selected ? 3 : 2,
         dashArray: def.dash,
         fillColor: def.color,
-        fillOpacity: o.props.status === 'idea' ? 0.12 : 0.28,
+        fillOpacity: (def.fillOpacity ?? 0.28) * (o.props.status === 'idea' ? 0.45 : 1),
         opacity: o.props.status === 'idea' ? 0.6 : 1,
       };
       const path =
@@ -176,6 +187,8 @@ export class PlanLayer {
     (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : `<b>${escapeHtml(label)}</b><br>${escapeHtml(def.label)}`, {
       permanent: this.labels,
       direction: isArea && this.labels ? 'center' : 'top',
+      // Navnet legges under ikonet midt i området.
+      offset: def.kind === 'polygon' && this.labels ? [0, 26] : [0, 0],
       className: this.labels ? 'map-label' : '',
       sticky: !this.labels && def.kind !== 'point',
     });
@@ -185,6 +198,17 @@ export class PlanLayer {
     });
 
     this.group.addLayer(layer);
+    if (def.kind === 'polygon') {
+      const poly = layer as L.Polygon;
+      const centerIcon = L.marker(poly.getCenter(), {
+        icon: areaIcon(def, o, selected),
+        interactive: false,
+        keyboard: false,
+        pmIgnore: true,
+      } as L.MarkerOptions).addTo(this.map);
+      handles.push(centerIcon);
+      if (editing) poly.on('pm:markerdrag pm:drag pm:edit', () => centerIcon.setLatLng(poly.getCenter()));
+    }
     if (editing && (def.kind === 'line' || def.kind === 'polygon')) {
       (layer as L.Polyline).pm.enable({ allowSelfIntersection: true, draggable: true, snappable: true });
     }

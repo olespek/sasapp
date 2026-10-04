@@ -15,6 +15,8 @@ export interface ObjectTypeDef {
   icon: string;
   /** Stiplet linje/kant (Leaflet dashArray). */
   dash?: string;
+  /** Hvor tett fargen fyller et område (0–1, standard 0,28). */
+  fillOpacity?: number;
   /** Linjebredde i kartet (standard 4 for linjer). */
   weight?: number;
   /** For gjerder: lengden på ett element i meter, brukes til å beregne antall elementer. */
@@ -40,7 +42,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   // Publikum
   { id: 'publikumsomrade', label: 'Publikumsområde', kind: 'polygon', group: 'publikum', color: '#2563eb', icon: 'users' },
   { id: 'vip', label: 'VIP-område', kind: 'polygon', group: 'publikum', color: '#ca8a04', icon: 'star' },
-  { id: 'tribune', label: 'Spottertribune', kind: 'polygon', group: 'publikum', color: '#4f46e5', icon: 'camera' },
+  { id: 'tribune', label: 'Spottertribune', kind: 'polygon', group: 'publikum', color: '#1f2937', icon: 'camera', fillOpacity: 0.6 },
   { id: 'inngang', label: 'Inngang', kind: 'point', group: 'publikum', color: '#16a34a', icon: 'log-in' },
   { id: 'utgang', label: 'Utgang', kind: 'point', group: 'publikum', color: '#0d9488', icon: 'log-out', retired: true },
   { id: 'toalett', label: 'Toalett', kind: 'point', group: 'publikum', color: '#0891b2', icon: 'toilet' },
