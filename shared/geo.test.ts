@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, aircraftShapes } from './aircraft.js';
 import { getObjectType, panelCount } from './catalog.js';
-import { bearing, distance, offset, polygonArea } from './geo.js';
+import { bearing, constrainAngle, distance, offset, polygonArea } from './geo.js';
 import type { Position } from './types.js';
 
 const SOLA: Position = [5.6442, 58.8873];
@@ -46,5 +46,25 @@ describe('gjerdeelementer', () => {
     expect(panelCount(getObjectType('gjerde'), 35.1)).toBe(11);
     expect(panelCount(getObjectType('gjerde_lavt'), 9)).toBe(5);
     expect(panelCount(getObjectType('fastgjerde'), 100)).toBeNull();
+  });
+});
+
+describe('vinkellås', () => {
+  it('låser første linjestykke til 45° fra nord', () => {
+    const p = constrainAngle(null, SOLA, offset(SOLA, 10, 9));
+    expect(bearing(SOLA, p)).toBeCloseTo(45, 3);
+  });
+
+  it('gir rett vinkel mot forrige linjestykke, også når figuren er skrå', () => {
+    const before = offset(SOLA, -20 * Math.sin(0.3), -20 * Math.cos(0.3)); // forrige stykke har kurs ca. 17°
+    const p = constrainAngle(before, SOLA, offset(SOLA, 30, -3));
+    const turn = Math.abs(bearing(SOLA, p) - bearing(before, SOLA));
+    expect(turn).toBeCloseTo(90, 3);
+  });
+
+  it('beholder omtrent lengden når musen er nær den låste retningen', () => {
+    const p = constrainAngle(null, SOLA, offset(SOLA, 1, 50));
+    expect(distance(SOLA, p)).toBeCloseTo(50, 0);
+    expect(bearing(SOLA, p) % 360).toBeCloseTo(0, 3);
   });
 });

@@ -968,6 +968,16 @@ table.summary .sub {
   display: none;
 }
 
+/* Linjestykket som tegnes nå, og lukkestykket tilbake til start for områder. */
+.leaflet-tooltip.measure-label.live {
+  background: var(--red);
+}
+
+.leaflet-tooltip.measure-label.closing {
+  background: rgba(4, 25, 43, 0.55);
+  font-weight: 600;
+}
+
 .locate-error {
   position: absolute;
   right: 44px;

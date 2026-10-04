@@ -4,6 +4,7 @@ import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
+import { createDrawAssist, type DrawAssist } from './drawAssist';
 import { MeasureControl } from './MeasureControl';
 import { PlanLayer, pinIcon } from './planLayer';
 import { Icon } from '../icons';
@@ -179,20 +180,25 @@ function Controller(props: Props) {
       cbRef.current.onCreated(type, geometry);
     };
     map.on('pm:create', onCreate as L.LeafletEventHandlerFn);
+    let assist: DrawAssist | null = null;
     if (def.kind === 'point') {
       map.pm.enableDraw('Marker', { markerStyle: { icon: pinIcon(def, null, false) }, continueDrawing: false });
     } else {
-      map.pm.enableDraw(def.kind === 'line' ? 'Line' : 'Polygon', {
+      const shape = def.kind === 'line' ? 'Line' : 'Polygon';
+      assist = createDrawAssist(map, shape);
+      map.pm.enableDraw(shape, {
         pathOptions,
         templineStyle: { color: def.color },
         hintlineStyle: { color: def.color, dashArray: '5 5' },
         finishOn: 'dblclick',
         allowSelfIntersection: true,
       });
+      assist.start();
     }
     return () => {
       map.off('pm:create', onCreate as L.LeafletEventHandlerFn);
       map.pm.disableDraw();
+      assist?.stop();
       document.removeEventListener('keydown', onKey);
     };
   }, [map, props.drawType]);

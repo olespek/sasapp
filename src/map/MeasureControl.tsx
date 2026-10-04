@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { distance } from '../../shared/geo';
+import { constrainAngle, distance } from '../../shared/geo';
 import type { Position } from '../../shared/types';
 import { Icon } from '../icons';
 
@@ -52,8 +52,15 @@ export function MeasureControl({ disabled }: { disabled: boolean }) {
     if (!on) return;
     const container = map.getContainer();
     container.classList.add('measuring');
-    const onClick = (e: L.LeafletMouseEvent) => {
+    // Med Shift låses retningen til 45°/90° i forhold til forrige linjestykke.
+    const pointFor = (e: L.LeafletMouseEvent): Position => {
       const p = toPos(e.latlng);
+      const { points: pts, finished: done } = state.current;
+      if (!e.originalEvent?.shiftKey || done || pts.length === 0) return p;
+      return constrainAngle(pts.length > 1 ? pts[pts.length - 2] : null, pts[pts.length - 1], p);
+    };
+    const onClick = (e: L.LeafletMouseEvent) => {
+      const p = pointFor(e);
       const { points: pts, finished: done } = state.current;
       if (done) {
         setPoints([p]);
@@ -67,7 +74,7 @@ export function MeasureControl({ disabled }: { disabled: boolean }) {
     const onDbl = () => {
       if (state.current.points.length > 1) setFinished(true);
     };
-    const onMove = (e: L.LeafletMouseEvent) => setCursor(toPos(e.latlng));
+    const onMove = (e: L.LeafletMouseEvent) => setCursor(pointFor(e));
     const onOut = () => setCursor(null);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOn(false);
@@ -133,7 +140,7 @@ export function MeasureControl({ disabled }: { disabled: boolean }) {
       ? 'Klikk i kartet for å starte målingen.'
       : finished
         ? 'Klikk i kartet for å starte en ny måling.'
-        : 'Klikk for flere punkter. Dobbeltklikk eller trykk «Ferdig» for å avslutte.';
+        : 'Klikk for flere punkter. Hold Shift for 45°/90°. Dobbeltklikk eller «Ferdig» avslutter.';
 
   return (
     <div ref={ref}>

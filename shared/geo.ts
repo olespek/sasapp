@@ -84,3 +84,20 @@ export function formatArea(m2: number): string {
   const m = `${Math.round(m2).toLocaleString('nb-NO')} m²`;
   return m2 >= 1000 ? `${m} (${(m2 / 1000).toFixed(1).replace('.', ',')} daa)` : m;
 }
+
+/**
+ * Låser retningen fra `prev` mot `cursor` til nærmeste multiplum av `step` grader.
+ * Med `before` (punktet før `prev`) regnes vinkelen relativt til forrige linjestykke, slik at man
+ * får rette (90°) eller 45°-hjørner uansett hvordan figuren ligger. Uten regnes den fra nord.
+ * Lengden blir cursorens projeksjon på den låste retningen.
+ */
+export function constrainAngle(before: Position | null, prev: Position, cursor: Position, step = 45): Position {
+  const v = toLocal(prev, cursor);
+  const len = Math.hypot(v.east, v.north);
+  if (len === 0) return prev;
+  const base = before ? bearing(before, prev) : 0;
+  const angle = Math.atan2(v.east, v.north) / RAD;
+  const snapped = base + Math.round((angle - base) / step) * step;
+  const dist = Math.max(0, len * Math.cos((angle - snapped) * RAD));
+  return offset(prev, dist * Math.sin(snapped * RAD), dist * Math.cos(snapped * RAD));
+}

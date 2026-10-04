@@ -346,8 +346,8 @@ function DrawHint({ type, onCancel }: { type: string; onCancel: () => void }) {
       : def.kind === 'aircraft'
         ? 'Klikk i kartet der flyet skal stå. Du kan rotere det etterpå.'
         : def.kind === 'line'
-          ? 'Klikk for hvert knekkpunkt. Dobbeltklikk eller klikk på siste punkt for å avslutte.'
-          : 'Klikk for hvert hjørne. Klikk på første punkt eller dobbeltklikk for å avslutte.';
+          ? 'Klikk for hvert knekkpunkt. Hold Shift for 45°/90°. Dobbeltklikk eller klikk på siste punkt for å avslutte.'
+          : 'Klikk for hvert hjørne. Hold Shift for 45°/90°. Klikk på første punkt eller dobbeltklikk for å avslutte.';
   return (
     <div className="draw-hint">
       <b>{def.label}:</b> {text}
