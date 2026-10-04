@@ -5,6 +5,7 @@ import { ApiError, api, shareToken, subscribe } from './api';
 import { Details } from './components/Details';
 import { Login } from './components/Login';
 import { Logo } from './components/Logo';
+import { Icon } from './icons';
 import { PasswordDialog } from './components/PasswordDialog';
 import { Palette } from './components/Palette';
 import { Sidebar, type Tab } from './components/Sidebar';
@@ -199,14 +200,15 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
     <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <header className="topbar">
         <button className="icon-btn" title="Meny" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          ☰
+          <Icon name="menu" size={20} />
         </button>
         <div className="brand">
           <Logo />
           <span className="brand-name">{plan.name}</span>
         </div>
         <span className={`badge ${plan.locked ? 'locked' : 'open'}`} title={plan.locked && plan.lockedBy ? `Låst av ${plan.lockedBy}` : undefined}>
-          {plan.locked ? '🔒 Låst' : '🔓 Åpen for redigering'}
+          <Icon name={plan.locked ? 'lock' : 'lock-open'} size={12} strokeWidth={2.5} />
+          {plan.locked ? 'Låst' : 'Åpen for redigering'}
         </span>
         <div className="spacer" />
         {access.canEdit && !viewingVersion && (
@@ -280,7 +282,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
         />
 
         <button className="map-btn home-btn" title="Til hovedområdet" onClick={() => mapApi.current?.flyHome()}>
-          ⌂
+          <Icon name="house" size={18} />
         </button>
 
         {viewingVersion && (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ROLES, ROLE_LABELS, type Plan, type Role, type ShareSettings, type User } from '../../shared/types';
 import { api, shareUrl } from '../api';
 import type { MapApi } from '../map/PlanMap';
+import { Icon } from '../icons';
 
 interface Props {
   plan: Plan;
@@ -58,7 +59,7 @@ function PlanSettings({ plan, mapApi, toast, fail }: Props) {
         </div>
       </label>
       <p className="muted small">
-        Startvisning: det kartutsnittet alle ser når de åpner planen, og som ⌂-knappen går tilbake til. Flytt og zoom kartet dit du vil ha det, og trykk på knappen.
+        Startvisning: det kartutsnittet alle ser når de åpner planen, og som hjem-knappen i kartet går tilbake til. Flytt og zoom kartet dit du vil ha det, og trykk på knappen.
       </p>
       <button className="btn" onClick={saveView}>
         Bruk dagens kartutsnitt som startvisning
@@ -198,10 +199,10 @@ function Users({ toast, fail }: Pick<Props, 'toast' | 'fail'>) {
               ))}
             </select>
             <button className="icon-btn" title="Sett nytt passord" onClick={() => resetPassword(u)}>
-              🔑
+              <Icon name="key-round" size={16} />
             </button>
             <button className="icon-btn" title="Slett bruker" onClick={() => remove(u)}>
-              🗑
+              <Icon name="trash-2" size={16} />
             </button>
           </li>
         ))}

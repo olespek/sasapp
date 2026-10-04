@@ -7,6 +7,7 @@ import { api } from '../api';
 import type { MapApi } from '../map/PlanMap';
 import { AdminPanel } from './AdminPanel';
 import { TypeSwatch } from './Palette';
+import { Icon } from '../icons';
 
 export type Tab = 'objects' | 'summary' | 'layers' | 'activity' | 'versions' | 'admin';
 
@@ -58,7 +59,7 @@ export function Sidebar(props: Props) {
           ))}
         </nav>
         <button className="icon-btn sidebar-close" onClick={props.onClose} title="Lukk panel">
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
       <div className="sidebar-body">

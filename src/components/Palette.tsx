@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { AIRCRAFT } from '../../shared/aircraft';
 import { ACTIVE_TYPES, GROUPS, type ObjectTypeDef } from '../../shared/catalog';
+import { Icon } from '../icons';
 
 interface Props {
   open: boolean;
@@ -16,7 +17,7 @@ export function TypeSwatch({ def }: { def: ObjectTypeDef }) {
   const shape = def.kind === 'line' ? 'line' : def.kind === 'polygon' ? 'area' : 'dot';
   return (
     <span className={`swatch ${shape}`} style={{ '--c': def.color } as React.CSSProperties}>
-      {shape !== 'line' && def.icon}
+      {shape !== 'line' && <Icon name={def.icon} size={14} strokeWidth={2.25} />}
     </span>
   );
 }
@@ -34,8 +35,10 @@ export function Palette({ open, setOpen, active, onPick }: Props) {
   return (
     <div className={`palette ${open ? '' : 'collapsed'}`} ref={ref}>
       <button className="palette-head" onClick={() => setOpen(!open)}>
-        <span>＋ Legg til</span>
-        <span>{open ? '‹' : '›'}</span>
+        <span className="row">
+          <Icon name="plus" size={18} strokeWidth={2.5} /> Legg til
+        </span>
+        <Icon name={open ? 'chevron-left' : 'chevron-right'} size={18} />
       </button>
       {open && (
         <div className="palette-body">
@@ -46,7 +49,7 @@ export function Palette({ open, setOpen, active, onPick }: Props) {
             return (
               <div key={g.id} className="palette-group">
                 <button className="palette-group-head" onClick={() => setOpenGroup(expanded ? null : g.id)}>
-                  {g.label} <span className="muted">{expanded ? '−' : '+'}</span>
+                  {g.label} <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} className="muted" />
                 </button>
                 {expanded &&
                   types.map((t) =>

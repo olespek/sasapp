@@ -5,6 +5,7 @@ import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
 import { PlanLayer, pinIcon } from './planLayer';
+import { Icon } from '../icons';
 
 export interface MapApi {
   focus(id: string): void;
@@ -237,7 +238,7 @@ function LocateControl() {
   return (
     <div className="locate" ref={ref}>
       <button className={`map-btn ${on ? 'active' : ''}`} title="Vis min posisjon" onClick={() => setOn(!on)}>
-        ◎
+        <Icon name="locate-fixed" size={18} />
       </button>
       {error && on && <div className="locate-error">{error}</div>}
     </div>

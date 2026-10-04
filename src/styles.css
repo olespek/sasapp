@@ -183,6 +183,21 @@ h4 {
   color: var(--danger) !important;
 }
 
+/* Lucide-ikoner */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.icon-btn,
+.map-btn {
+  display: inline-grid;
+  place-items: center;
+}
+
 /* Etikett i pilleform, som «INFORMASJON» på nettsiden. */
 .pill {
   display: inline-block;
@@ -397,7 +412,9 @@ h4 {
 }
 
 .badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 5px 12px;
   border-radius: 999px;
   background: var(--pill);
@@ -1029,6 +1046,7 @@ table.summary .sub {
 .palette-head {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 14px;
   padding: 12px 18px;
   background: var(--navy);

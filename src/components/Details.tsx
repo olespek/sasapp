@@ -5,6 +5,7 @@ import { formatArea, formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObject } from '../../shared/types';
 import type { api } from '../api';
 import { TypeSwatch } from './Palette';
+import { Icon } from '../icons';
 
 interface Props {
   object: PlanObject;
@@ -34,7 +35,7 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
           <div className="details-title">{o.name || <span className="muted">Uten navn</span>}</div>
         </div>
         <button className="icon-btn" onClick={onClose} title="Lukk">
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
 
@@ -78,10 +79,10 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
                 {canEdit && (
                   <>
                     <button className="btn small" title="Roter 15° mot klokka" onClick={() => setProps({ heading: (o.props.heading ?? 0) - 15 })}>
-                      ⟲
+                      <Icon name="rotate-ccw" size={14} />
                     </button>
                     <button className="btn small" title="Roter 15° med klokka" onClick={() => setProps({ heading: (o.props.heading ?? 0) + 15 })}>
-                      ⟳
+                      <Icon name="rotate-cw" size={14} />
                     </button>
                   </>
                 )}

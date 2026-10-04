@@ -6,6 +6,7 @@ import { aircraftShapes, getAircraft } from '../../shared/aircraft';
 import { getObjectType, type ObjectTypeDef } from '../../shared/catalog';
 import { bearing, normalizeHeading } from '../../shared/geo';
 import { STATUS_COLORS, type Geometry, type PlanObject, type Position } from '../../shared/types';
+import { iconSvg } from '../icons';
 
 export interface PlanLayerCallbacks {
   onSelect(id: string | null): void;
@@ -34,15 +35,15 @@ export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: bool
   const cls = ['pin', selected ? 'selected' : '', o?.props.status === 'idea' ? 'faded' : ''].join(' ');
   return L.divIcon({
     className: 'pin-wrap',
-    html: `<div class="${cls}" style="--c:${def.color}"><span>${escapeHtml(def.icon)}</span>${status}</div>`,
+    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, 16, 2.25)}${status}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
     tooltipAnchor: [0, -16],
   });
 }
 
-function handleIcon(symbol: string, cls: string): L.DivIcon {
-  return L.divIcon({ className: 'pin-wrap', html: `<div class="handle ${cls}">${symbol}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+function handleIcon(icon: string, cls: string): L.DivIcon {
+  return L.divIcon({ className: 'pin-wrap', html: `<div class="handle ${cls}">${iconSvg(icon, 15, 2.5)}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
 }
 
 export class PlanLayer {
@@ -221,8 +222,8 @@ export class PlanLayer {
         body.setLatLngs(shapes.body.map(toLatLng));
         rotor?.setLatLngs(shapes.rotor!.map(toLatLng));
       };
-      const move = L.marker(toLatLng(center), { icon: handleIcon('✥', 'move'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
-      const rotate = L.marker(toLatLng(shapes.nose), { icon: handleIcon('⟳', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
+      const move = L.marker(toLatLng(center), { icon: handleIcon('move', 'move'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
+      const rotate = L.marker(toLatLng(shapes.nose), { icon: handleIcon('rotate-cw', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
       move.bindTooltip('Dra for å flytte');
       rotate.bindTooltip('Dra for å rotere');
       move.on('drag', () => {
