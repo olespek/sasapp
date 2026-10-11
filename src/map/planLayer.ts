@@ -42,36 +42,6 @@ export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: bool
   });
 }
 
-/**
- * Ikon midt i et område: bare Lucide-ikonet i områdets kantfarge, uten sirkel eller kant, så det ikke
- * forveksles med punktobjektene. Størrelsen styres av --area-icon-size (se updateAreaIconSize).
- * Tar ikke imot klikk, så området under kan velges og dras.
- */
-function areaIcon(def: ObjectTypeDef, o: PlanObject, selected: boolean): L.DivIcon {
-  const cls = ['area-icon', o.props.status === 'idea' ? 'faded' : ''].join(' ');
-  const color = selected ? SELECT_COLOR : def.color;
-  return L.divIcon({
-    className: 'pin-wrap area-icon-wrap',
-    html: `<div class="${cls}" style="color:${color}">${iconSvg(def.icon, 24, 2.25)}</div>`,
-    iconSize: [AREA_ICON_FULL, AREA_ICON_FULL],
-    iconAnchor: [AREA_ICON_FULL / 2, AREA_ICON_FULL / 2],
-  });
-}
-
-/** Full størrelse fra zoom 17 (målestokk 50 m ved Sola) og innover. Krymper én tredjedel per zoomnivå utover. */
-const AREA_ICON_FULL = 26;
-const AREA_ICON_FULL_ZOOM = 17;
-
-export function areaIconSize(zoom: number): number {
-  if (zoom >= AREA_ICON_FULL_ZOOM) return AREA_ICON_FULL;
-  const size = AREA_ICON_FULL * Math.pow(2 / 3, AREA_ICON_FULL_ZOOM - zoom);
-  return size < 7 ? 0 : Math.round(size);
-}
-
-function updateAreaIconSize(map: L.Map): void {
-  map.getContainer().style.setProperty('--area-icon-size', `${areaIconSize(map.getZoom())}px`);
-}
-
 function handleIcon(icon: string, cls: string): L.DivIcon {
   return L.divIcon({ className: 'pin-wrap', html: `<div class="handle ${cls}">${iconSvg(icon, 15, 2.5)}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
 }
@@ -90,15 +60,10 @@ export class PlanLayer {
     private cb: PlanLayerCallbacks,
   ) {
     this.group = L.featureGroup().addTo(map);
-    updateAreaIconSize(map);
-    map.on('zoomend', this.onZoom);
   }
-
-  private onZoom = () => updateAreaIconSize(this.map);
 
   destroy(): void {
     for (const id of [...this.entries.keys()]) this.remove(id);
-    this.map.off('zoomend', this.onZoom);
     this.group.remove();
   }
 
@@ -211,8 +176,6 @@ export class PlanLayer {
     (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : `<b>${escapeHtml(label)}</b><br>${escapeHtml(def.label)}`, {
       permanent: this.labels,
       direction: isArea && this.labels ? 'center' : 'top',
-      // Navnet legges under ikonet midt i området.
-      offset: def.kind === 'polygon' && this.labels ? [0, 24] : [0, 0],
       className: this.labels ? 'map-label' : '',
       sticky: !this.labels && def.kind !== 'point',
     });
@@ -222,17 +185,6 @@ export class PlanLayer {
     });
 
     this.group.addLayer(layer);
-    if (def.kind === 'polygon') {
-      const poly = layer as L.Polygon;
-      const centerIcon = L.marker(poly.getCenter(), {
-        icon: areaIcon(def, o, selected),
-        interactive: false,
-        keyboard: false,
-        pmIgnore: true,
-      } as L.MarkerOptions).addTo(this.map);
-      handles.push(centerIcon);
-      if (editing) poly.on('pm:markerdrag pm:drag pm:edit', () => centerIcon.setLatLng(poly.getCenter()));
-    }
     if (editing && (def.kind === 'line' || def.kind === 'polygon')) {
       (layer as L.Polyline).pm.enable({ allowSelfIntersection: true, draggable: true, snappable: true });
     }
