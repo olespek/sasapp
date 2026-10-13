@@ -28,9 +28,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
         <div className="login-logo">
           <Logo />
         </div>
-        <span className="pill">Arenaplan</span>
-        <h1>Planlegging av arenaen</h1>
-        <p className="muted">Logg inn for å se og redigere planen.</p>
+        <h1>Arenaplan</h1>
         <label>
           Brukernavn
           <input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
