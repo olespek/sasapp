@@ -129,36 +129,40 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
 
         {canEdit && o.geometry.type === 'LineString' && <LineToolsBox source={o} onStartTool={onStartTool} />}
 
-        <Field label="Status">
-          <div className="status-row">
-            {STATUSES.map((s) => (
-              <button
-                key={s}
-                disabled={!canEdit}
-                className={`status-chip ${o.props.status === s ? 'active' : ''}`}
-                style={{ '--c': STATUS_COLORS[s] } as React.CSSProperties}
-                onClick={() => setProps({ status: s })}
-              >
-                {STATUS_LABELS[s]}
-              </button>
-            ))}
-          </div>
-        </Field>
+        {!def?.noTracking && (
+          <>
+            <Field label="Status">
+              <div className="status-row">
+                {STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    disabled={!canEdit}
+                    className={`status-chip ${o.props.status === s ? 'active' : ''}`}
+                    style={{ '--c': STATUS_COLORS[s] } as React.CSSProperties}
+                    onClick={() => setProps({ status: s })}
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            </Field>
 
-        <div className="grid2">
-          <Field label="Ansvarlig">
-            <TextInput value={o.props.responsible} disabled={!canEdit} onCommit={(responsible) => setProps({ responsible })} />
-          </Field>
-          <Field label="Leverandør">
-            <TextInput value={o.props.supplier} disabled={!canEdit} onCommit={(supplier) => setProps({ supplier })} />
-          </Field>
-          <Field label="Antall">
-            <NumberInput value={o.props.quantity} disabled={!canEdit} onCommit={(quantity) => setProps({ quantity })} />
-          </Field>
-          <Field label="Frist">
-            <input type="date" value={o.props.dueDate ?? ''} disabled={!canEdit} onChange={(e) => setProps({ dueDate: e.target.value || null })} />
-          </Field>
-        </div>
+            <div className="grid2">
+              <Field label="Ansvarlig">
+                <TextInput value={o.props.responsible} disabled={!canEdit} onCommit={(responsible) => setProps({ responsible })} />
+              </Field>
+              <Field label="Leverandør">
+                <TextInput value={o.props.supplier} disabled={!canEdit} onCommit={(supplier) => setProps({ supplier })} />
+              </Field>
+              <Field label="Antall">
+                <NumberInput value={o.props.quantity} disabled={!canEdit} onCommit={(quantity) => setProps({ quantity })} />
+              </Field>
+              <Field label="Frist">
+                <input type="date" value={o.props.dueDate ?? ''} disabled={!canEdit} onChange={(e) => setProps({ dueDate: e.target.value || null })} />
+              </Field>
+            </div>
+          </>
+        )}
 
         <Field label="Notat">
           <TextInput multiline value={o.props.notes} disabled={!canEdit} onCommit={(notes) => setProps({ notes })} />

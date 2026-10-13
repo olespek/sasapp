@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
-import { GROUPS, OBJECT_TYPES, getObjectType, panelCount } from '../../shared/catalog';
+import { GROUPS, OBJECT_TYPES, getObjectType, hasTracking, panelCount } from '../../shared/catalog';
 import { formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, obstacleHeightText, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
 import { api } from '../api';
@@ -75,7 +75,7 @@ export function Sidebar(props: Props) {
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
-const isOverdue = (o: PlanObject) => !!o.props.dueDate && o.props.dueDate < today() && !['done', 'installed'].includes(o.props.status);
+const isOverdue = (o: PlanObject) => hasTracking(o.type) && !!o.props.dueDate && o.props.dueDate < today() && !['done', 'installed'].includes(o.props.status);
 
 function label(o: PlanObject): string {
   if (o.name) return o.name;
@@ -100,6 +100,7 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
       .filter((o) => {
         const def = getObjectType(o.type);
         if (group && def?.group !== group) return false;
+        if (status && !hasTracking(o.type)) return false;
         if (status === 'overdue' && !isOverdue(o)) return false;
         if (status === 'open' && ['done', 'installed', 'confirmed'].includes(o.props.status)) return false;
         if (status && status !== 'overdue' && status !== 'open' && o.props.status !== status) return false;
@@ -164,14 +165,16 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
                 <div className="obj-name">{label(o)}</div>
                 <div className="muted small">
                   {def?.label}
-                  {o.props.responsible && ` · ${o.props.responsible}`}
-                  {o.props.quantity !== null && ` · ${o.props.quantity} stk`}
+                  {hasTracking(o.type) && o.props.responsible && ` · ${o.props.responsible}`}
+                  {hasTracking(o.type) && o.props.quantity !== null && ` · ${o.props.quantity} stk`}
                   {obstacleHeightText(o.props) && ` · ${obstacleHeightText(o.props)}`}
                 </div>
               </div>
               <div className="obj-side">
-                <span className="status-dot" style={{ background: STATUS_COLORS[o.props.status] }} title={STATUS_LABELS[o.props.status]} />
-                {o.props.dueDate && <span className={`small ${isOverdue(o) ? 'overdue' : 'muted'}`}>{o.props.dueDate.slice(5).split('-').reverse().join('.')}</span>}
+                {hasTracking(o.type) && (
+                  <span className="status-dot" style={{ background: STATUS_COLORS[o.props.status] }} title={STATUS_LABELS[o.props.status]} />
+                )}
+                {hasTracking(o.type) && o.props.dueDate && <span className={`small ${isOverdue(o) ? 'overdue' : 'muted'}`}>{o.props.dueDate.slice(5).split('-').reverse().join('.')}</span>}
               </div>
             </li>
           );
@@ -201,14 +204,15 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
     return map;
   }, [objects]);
 
-  const statusCounts = STATUSES.map((s) => ({ s, n: objects.filter((o) => o.props.status === s).length }));
+  const tracked = objects.filter((o) => hasTracking(o.type));
+  const statusCounts = STATUSES.map((s) => ({ s, n: tracked.filter((o) => o.props.status === s).length }));
   const overdue = objects.filter(isOverdue);
   const aircraft = AIRCRAFT.map((a) => ({ a, n: objects.filter((o) => o.props.aircraftModel === a.id).length })).filter((x) => x.n > 0);
 
   return (
     <div className="stack">
       <h4>Status</h4>
-      {objects.length > 0 ? (
+      {tracked.length > 0 ? (
         <>
           <div className="status-bar">
             {statusCounts
@@ -228,7 +232,7 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
           </div>
         </>
       ) : (
-        <p className="muted">Ingen objekter ennå.</p>
+        <p className="muted">{objects.length > 0 ? 'Ingen objekter med status.' : 'Ingen objekter ennå.'}</p>
       )}
 
       {overdue.length > 0 && (

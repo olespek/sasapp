@@ -31,8 +31,9 @@ function escapeHtml(s: string): string {
 }
 
 export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: boolean): L.DivIcon {
-  const status = o ? `<span class="pin-status" style="background:${STATUS_COLORS[o.props.status]}"></span>` : '';
-  const cls = ['pin', selected ? 'selected' : '', o?.props.status === 'idea' ? 'faded' : ''].join(' ');
+  const tracked = !def.noTracking;
+  const status = o && tracked ? `<span class="pin-status" style="background:${STATUS_COLORS[o.props.status]}"></span>` : '';
+  const cls = ['pin', selected ? 'selected' : '', tracked && o?.props.status === 'idea' ? 'faded' : ''].join(' ');
   const hText = def.hasHeight && o ? obstacleHeightText(o.props) : null;
   const h = hText ? `<span class="pin-height">${escapeHtml(hText)}</span>` : '';
   return L.divIcon({
@@ -151,13 +152,14 @@ export class PlanLayer {
       if (editing) marker.on('dragend', () => this.cb.onGeometryChange(o.id, { type: 'Point', coordinates: fromLatLng(marker.getLatLng()) }));
       layer = marker;
     } else {
+      const idea = !def.noTracking && o.props.status === 'idea';
       const style: L.PathOptions = {
         color: selected ? SELECT_COLOR : def.color,
         weight: def.kind === 'line' ? (def.weight ?? 4) + (selected ? 2 : 0) : selected ? 3 : 2,
         dashArray: def.dash,
         fillColor: def.color,
-        fillOpacity: (def.fillOpacity ?? 0.28) * (o.props.status === 'idea' ? 0.45 : 1),
-        opacity: o.props.status === 'idea' ? 0.6 : 1,
+        fillOpacity: (def.fillOpacity ?? 0.28) * (idea ? 0.45 : 1),
+        opacity: idea ? 0.6 : 1,
       };
       const path =
         o.geometry.type === 'LineString'
