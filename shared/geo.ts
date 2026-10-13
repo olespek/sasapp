@@ -101,3 +101,111 @@ export function constrainAngle(before: Position | null, prev: Position, cursor: 
   const dist = Math.max(0, len * Math.cos((angle - snapped) * RAD));
   return offset(prev, dist * Math.sin(snapped * RAD), dist * Math.cos(snapped * RAD));
 }
+
+// ---------- Linjer: avstand og parallell forskyvning ----------
+
+interface XY {
+  x: number; // øst, meter
+  y: number; // nord, meter
+}
+
+const toXY = (origin: Position, p: Position): XY => {
+  const l = toLocal(origin, p);
+  return { x: l.east, y: l.north };
+};
+const fromXY = (origin: Position, v: XY): Position => offset(origin, v.x, v.y);
+
+export interface NearestOnLine {
+  /** Korteste avstand i meter fra punktet til linjen. */
+  distance: number;
+  /** Nærmeste punkt på linjen. */
+  point: Position;
+  /** Hvilket linjestykke (indeks i koordinatlisten) som er nærmest. */
+  segment: number;
+  /** 1 hvis punktet ligger til venstre for linjen i tegneretningen, -1 til høyre. */
+  side: 1 | -1;
+}
+
+/** Nærmeste punkt på en linje (polyline) fra et punkt. */
+export function nearestOnLine(p: Position, coords: Position[]): NearestOnLine | null {
+  if (coords.length < 2) return null;
+  const origin = coords[0];
+  const q = toXY(origin, p);
+  let best: NearestOnLine | null = null;
+  for (let i = 1; i < coords.length; i++) {
+    const a = toXY(origin, coords[i - 1]);
+    const b = toXY(origin, coords[i]);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / len2));
+    const c = { x: a.x + t * dx, y: a.y + t * dy };
+    const d = Math.hypot(q.x - c.x, q.y - c.y);
+    if (!best || d < best.distance) {
+      const cross = dx * (q.y - a.y) - dy * (q.x - a.x);
+      best = { distance: d, point: fromXY(origin, c), segment: i - 1, side: cross >= 0 ? 1 : -1 };
+    }
+  }
+  return best;
+}
+
+/**
+ * Parallell linje i fast avstand. side 1 = venstre for tegneretningen, -1 = høyre.
+ * Knekkpunktene forskyves slik at hvert linjestykke ligger nøyaktig `dist` meter fra originalen.
+ */
+export function offsetLine(coords: Position[], dist: number, side: 1 | -1): Position[] {
+  if (coords.length < 2) return coords.slice();
+  const origin = coords[0];
+  const pts = coords.map((c) => toXY(origin, c));
+  const normals: XY[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i - 1].x;
+    const dy = pts[i].y - pts[i - 1].y;
+    const len = Math.hypot(dx, dy) || 1;
+    normals.push({ x: (-dy / len) * side, y: (dx / len) * side }); // venstrenormal ganger side
+  }
+  const out: XY[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (i === 0 || i === pts.length - 1) {
+      const n = normals[i === 0 ? 0 : normals.length - 1];
+      out.push({ x: pts[i].x + n.x * dist, y: pts[i].y + n.y * dist });
+      continue;
+    }
+    // Gjæringspunkt: summen av normalene, skalert slik at avstanden til begge stykkene blir dist.
+    const n1 = normals[i - 1];
+    const n2 = normals[i];
+    const mx = n1.x + n2.x;
+    const my = n1.y + n2.y;
+    const dot = mx * n1.x + my * n1.y;
+    const scale = dot < 0.1 ? dist / 0.1 : dist / dot; // begrens svært spisse vinkler
+    out.push({ x: pts[i].x + mx * scale, y: pts[i].y + my * scale });
+  }
+  return out.map((v) => fromXY(origin, v));
+}
+
+/**
+ * Slår sammen to linjer til én ved de nærmeste endepunktene. Ligger endepunktene innen 0,5 m
+ * fra hverandre, blir de ett knekkpunkt; ellers kobles de med et rett stykke.
+ */
+export function mergeLines(a: Position[], b: Position[]): Position[] {
+  const rev = (l: Position[]) => l.slice().reverse();
+  const options: [Position[], Position[]][] = [
+    [a, b],
+    [a, rev(b)],
+    [rev(a), b],
+    [rev(a), rev(b)],
+  ];
+  let best = options[0];
+  let bestD = Infinity;
+  for (const [x, y] of options) {
+    const d = distance(x[x.length - 1], y[0]);
+    if (d < bestD) {
+      bestD = d;
+      best = [x, y];
+    }
+  }
+  const [first, second] = best;
+  // Behold retningen til den første linjen der det er mulig.
+  const merged = bestD < 0.5 ? [...first, ...second.slice(1)] : [...first, ...second];
+  return first === a || first[0] === a[0] ? merged : rev(merged);
+}

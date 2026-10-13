@@ -6,11 +6,34 @@
 // justerer e.latlng når Shift er nede, og en lytter ETTER Geoman som tegner lengdene.
 
 import L from 'leaflet';
-import { constrainAngle, distance } from '../../shared/geo';
+import { constrainAngle, distance, nearestOnLine } from '../../shared/geo';
 import type { Position } from '../../shared/types';
 import { formatDistance } from './MeasureControl';
 
 type Shape = 'Line' | 'Polygon';
+
+/** En linje i planen som det kan vises avstand til. */
+export interface LineRef {
+  name: string;
+  coords: Position[];
+}
+
+export interface DrawAssistOptions {
+  /** Punktet før startpunktet, når man forlenger en eksisterende linje. Brukes til vinkellåsen. */
+  before?: Position;
+  /** Linjene i planen, for å vise avstand fra musepekeren til nærmeste linje. */
+  lines?: () => LineRef[];
+}
+
+/** Nærmeste linje fra et punkt, innen 2 km. */
+export function nearestLine(p: Position, lines: LineRef[]): { name: string; distance: number } | null {
+  let best: { name: string; distance: number } | null = null;
+  for (const l of lines) {
+    const n = nearestOnLine(p, l.coords);
+    if (n && (!best || n.distance < best.distance)) best = { name: l.name, distance: n.distance };
+  }
+  return best && best.distance <= 2000 ? best : null;
+}
 
 interface DrawInternals {
   _layer?: L.Polyline;
@@ -27,7 +50,7 @@ export interface DrawAssist {
 }
 
 /** Må kalles FØR map.pm.enableDraw, slik at vinkellåsen får justere posisjonen før Geoman ser den. */
-export function createDrawAssist(map: L.Map, shape: Shape): DrawAssist {
+export function createDrawAssist(map: L.Map, shape: Shape, opts: DrawAssistOptions = {}): DrawAssist {
   const draw = () => (map.pm.Draw as unknown as Record<Shape, DrawInternals>)[shape];
   const placed = (): Position[] => ((draw()?._layer?.getLatLngs() as L.LatLng[] | undefined) ?? []).map(toPos);
 
@@ -35,7 +58,8 @@ export function createDrawAssist(map: L.Map, shape: Shape): DrawAssist {
     if (!e.originalEvent?.shiftKey) return;
     const pts = placed();
     if (pts.length === 0) return;
-    const c = constrainAngle(pts.length > 1 ? pts[pts.length - 2] : null, pts[pts.length - 1], toPos(e.latlng));
+    const before = pts.length > 1 ? pts[pts.length - 2] : (opts.before ?? null);
+    const c = constrainAngle(before, pts[pts.length - 1], toPos(e.latlng));
     e.latlng = L.latLng(c[1], c[0]);
   };
 
@@ -56,6 +80,21 @@ export function createDrawAssist(map: L.Map, shape: Shape): DrawAssist {
   const render = () => {
     labels.clearLayers();
     const pts = placed();
+    const hintLL = draw()?._hintMarker?.getLatLng();
+    // Avstand fra musepekeren til nærmeste linje i planen.
+    if (hintLL && opts.lines) {
+      const near = nearestLine(toPos(hintLL), opts.lines());
+      if (near) {
+        labels.addLayer(
+          L.marker(hintLL, { opacity: 0, interactive: false, keyboard: false }).bindTooltip(`${formatDistance(near.distance)} til ${near.name}`, {
+            permanent: true,
+            direction: 'bottom',
+            offset: [0, 18],
+            className: 'measure-label near',
+          }),
+        );
+      }
+    }
     if (pts.length === 0) return;
     for (let i = 1; i < pts.length; i++) label(pts[i - 1], pts[i]);
     const hint = draw()?._hintMarker?.getLatLng();

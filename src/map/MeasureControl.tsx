@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { constrainAngle, distance } from '../../shared/geo';
 import type { Position } from '../../shared/types';
 import { Icon } from '../icons';
+import { nearestLine, type LineRef } from './drawAssist';
 
 /** Avstand med desimal for korte strekninger, slik at små mål blir presise. */
 export function formatDistance(m: number): string {
@@ -24,7 +25,7 @@ function total(points: Position[]): number {
  * Måleverktøy: klikk punkter i kartet for å måle avstand. Dobbeltklikk eller «Ferdig» avslutter,
  * og neste klikk starter en ny måling. Målingen lagres ikke.
  */
-export function MeasureControl({ disabled }: { disabled: boolean }) {
+export function MeasureControl({ disabled, lines }: { disabled: boolean; lines?: () => LineRef[] }) {
   const map = useMap();
   const [on, setOn] = useState(false);
   const [points, setPoints] = useState<Position[]>([]);
@@ -135,6 +136,8 @@ export function MeasureControl({ disabled }: { disabled: boolean }) {
   );
 
   const sum = total(finished || !cursor ? points : [...points, cursor]);
+  const probe = cursor && !finished ? cursor : points[points.length - 1];
+  const near = on && probe && lines ? nearestLine(probe, lines()) : null;
   const hint =
     points.length === 0
       ? 'Klikk i kartet for å starte målingen.'
@@ -160,6 +163,11 @@ export function MeasureControl({ disabled }: { disabled: boolean }) {
             <span className="muted small">Avstand</span>
             <b>{formatDistance(sum)}</b>
           </div>
+          {near && (
+            <div className="small">
+              Nærmeste linje fra {cursor && !finished ? 'musepekeren' : 'siste punkt'}: <b>{formatDistance(near.distance)}</b> ({near.name})
+            </div>
+          )}
           <div className="measure-hint small">{hint}</div>
           <div className="row">
             {!finished && points.length > 1 && (

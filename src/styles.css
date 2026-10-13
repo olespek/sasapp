@@ -907,6 +907,27 @@ table.summary .sub {
   pointer-events: none !important;
 }
 
+.tool-active,
+.tool-active .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
+/* Mens et linjeverktøy venter på klikk i kartet, skal objektene ikke fange klikkene. */
+.tool-active .leaflet-interactive:not(.tool-handle) {
+  pointer-events: none !important;
+}
+
+.tool-active .tool-handle {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.leaflet-tooltip.measure-label.near {
+  background: #fff;
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+}
+
 .measure-panel {
   position: absolute;
   left: 50%;
@@ -1372,6 +1393,27 @@ table.summary .sub {
 
 .status-chip:disabled:not(.active) {
   opacity: 0.4;
+}
+
+.line-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.row.wrap {
+  flex-wrap: wrap;
+}
+
+.btn.active {
+  background: var(--navy);
+  color: #fff;
 }
 
 .meta {

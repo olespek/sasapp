@@ -10,6 +10,8 @@ import { PasswordDialog } from './components/PasswordDialog';
 import { Palette } from './components/Palette';
 import { Sidebar, type Tab } from './components/Sidebar';
 import { PlanMap, type MapApi } from './map/PlanMap';
+import type { LineTool } from './map/LineTools';
+import { mergeLines } from '../shared/geo';
 
 type Toast = { id: number; text: string; error?: boolean };
 
@@ -52,6 +54,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [draw, setDraw] = useState<{ type: string; model?: string } | null>(null);
+  const [lineTool, setLineTool] = useState<LineTool | null>(null);
   const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
   const [showLabels, setShowLabels] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<Version | null>(null);
@@ -120,8 +123,20 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const editing = canEdit && editMode;
 
   useEffect(() => {
-    if (!editing) setDraw(null);
+    if (!editing) {
+      setDraw(null);
+      setLineTool(null);
+    }
   }, [editing]);
+
+  useEffect(() => {
+    if (!lineTool) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLineTool(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [lineTool]);
 
   const shownObjects = viewingVersion ? viewingVersion.objects : objects;
   const selected = shownObjects.find((o) => o.id === selectedId) ?? null;
@@ -151,6 +166,57 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
       upsertLocal(current);
       fail(err);
     }
+  };
+
+  const onParallel = async (typeId: string, geometry: Geometry) => {
+    setLineTool(null);
+    try {
+      const created = await api.createObject({ type: typeId, name: '', geometry });
+      setObjects((list) => (list.some((o) => o.id === created.id) ? list : [...list, created]));
+      setSelectedId(created.id);
+      toast('Parallell linje er laget');
+    } catch (err) {
+      fail(err);
+    }
+  };
+
+  const onExtend = async (id: string, geometry: Geometry) => {
+    setLineTool(null);
+    await onGeometryChange(id, geometry);
+    setSelectedId(id);
+  };
+
+  /** Klikk på en annen linje mens «Slå sammen» er aktivt. */
+  const onMergeWith = async (sourceId: string, targetId: string) => {
+    const a = objects.find((o) => o.id === sourceId);
+    const b = objects.find((o) => o.id === targetId);
+    if (!a || !b || a.geometry.type !== 'LineString' || b.geometry.type !== 'LineString') {
+      toast('Velg en linje å slå sammen med', true);
+      return;
+    }
+    const nameA = a.name || getObjectType(a.type)?.label;
+    const nameB = b.name || getObjectType(b.type)?.label;
+    if (!confirm(`Slå sammen «${nameA}» og «${nameB}» til én linje? «${nameB}» slettes, og den nye linjen beholder typen og detaljene til «${nameA}».`)) return;
+    setLineTool(null);
+    try {
+      const geometry: Geometry = { type: 'LineString', coordinates: mergeLines(a.geometry.coordinates, b.geometry.coordinates) };
+      upsertLocal(await api.updateObject(a.id, { geometry }));
+      await api.deleteObject(b.id);
+      setObjects((list) => list.filter((o) => o.id !== b.id));
+      setSelectedId(a.id);
+      toast('Linjene er slått sammen');
+    } catch (err) {
+      fail(err);
+    }
+  };
+
+  const onMapSelect = (id: string | null) => {
+    if (lineTool?.kind === 'merge') {
+      if (id && id !== lineTool.sourceId) onMergeWith(lineTool.sourceId, id);
+      return;
+    }
+    if (lineTool) return;
+    setSelectedId(id);
   };
 
   const onUpdate = async (id: string, patch: Parameters<typeof api.updateObject>[1]) => {
@@ -275,10 +341,13 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           showLabels={showLabels}
           drawType={draw?.type ?? null}
           apiRef={mapApi}
-          onSelect={setSelectedId}
+          onSelect={onMapSelect}
           onGeometryChange={onGeometryChange}
           onCreated={onCreated}
           onDrawCancel={() => setDraw(null)}
+          lineTool={lineTool}
+          onParallel={onParallel}
+          onExtend={onExtend}
         />
 
         <button className="map-btn home-btn" title="Til hovedområdet" onClick={() => mapApi.current?.flyHome()}>
@@ -309,6 +378,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           />
         )}
         {draw && <DrawHint type={draw.type} onCancel={() => setDraw(null)} />}
+        {lineTool && <LineToolHint tool={lineTool} onCancel={() => setLineTool(null)} />}
 
         {selected && (
           <Details
@@ -320,6 +390,11 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
             onUpdate={onUpdate}
             onDelete={onDelete}
             onClose={() => setSelectedId(null)}
+            objects={objects}
+            onStartTool={(t) => {
+              setDraw(null);
+              setLineTool(t);
+            }}
           />
         )}
 
@@ -333,6 +408,23 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
       </main>
 
       {passwordOpen && <PasswordDialog onClose={() => setPasswordOpen(false)} toast={toast} />}
+    </div>
+  );
+}
+
+function LineToolHint({ tool, onCancel }: { tool: LineTool; onCancel: () => void }) {
+  const text =
+    tool.kind === 'parallel'
+      ? `Parallell linje ${tool.distance.toLocaleString('nb-NO')} m: flytt musen til siden linjen skal ligge på, og klikk for å lage den.`
+      : tool.kind === 'extend'
+        ? 'Forleng: klikk på enden (+) du vil fortsette fra, og tegn videre. Hold Shift for 45°/90°. Dobbeltklikk for å avslutte.'
+        : 'Slå sammen: klikk på linjen som skal slås sammen med denne.';
+  return (
+    <div className="draw-hint">
+      {text}
+      <button className="btn small" onClick={onCancel}>
+        Avbryt (Esc)
+      </button>
     </div>
   );
 }

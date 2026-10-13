@@ -6,6 +6,9 @@ import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObje
 import type { api } from '../api';
 import { TypeSwatch } from './Palette';
 import { Icon } from '../icons';
+import { nearestLine } from '../map/drawAssist';
+import { lineRefs, type LineTool } from '../map/LineTools';
+import { formatDistance } from '../map/MeasureControl';
 
 interface Props {
   object: PlanObject;
@@ -15,9 +18,12 @@ interface Props {
   onUpdate(id: string, patch: Parameters<typeof api.updateObject>[1]): void;
   onDelete(id: string): void;
   onClose(): void;
+  /** Alle objekter i planen, for avstand til nærmeste linje. */
+  objects: PlanObject[];
+  onStartTool(tool: LineTool): void;
 }
 
-export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpdate, onDelete, onClose }: Props) {
+export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpdate, onDelete, onClose, objects, onStartTool }: Props) {
   const def = getObjectType(o.type);
   const spec = getAircraft(o.props.aircraftModel);
   const m = measure(o.geometry);
@@ -124,6 +130,10 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
             )}
           </div>
         )}
+
+        {o.geometry.type === 'Point' && <NearestLineInfo point={o.geometry.coordinates} objects={objects} />}
+
+        {canEdit && o.geometry.type === 'LineString' && <LineToolsBox source={o} onStartTool={onStartTool} />}
 
         <Field label="Status">
           <div className="status-row">
@@ -232,5 +242,73 @@ function NumberInput(props: { value: number | null; disabled?: boolean; onCommit
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
     />
+  );
+}
+
+/** Avstand fra et punkt (f.eks. hindring eller fly) til nærmeste linje i planen. */
+function NearestLineInfo({ point, objects }: { point: [number, number]; objects: PlanObject[] }) {
+  const near = nearestLine(point, lineRefs(objects));
+  if (!near) return null;
+  return (
+    <div className="measure">
+      Nærmeste linje: <b>{formatDistance(near.distance)}</b> til {near.name}
+    </div>
+  );
+}
+
+const LINE_TYPES = ACTIVE_TYPES.filter((t) => t.kind === 'line');
+
+/** Parallell linje, forlengelse og sammenslåing for linjer. */
+function LineToolsBox({ source, onStartTool }: { source: PlanObject; onStartTool(tool: LineTool): void }) {
+  const [open, setOpen] = useState(false);
+  const [typeId, setTypeId] = useState(source.type);
+  const [distance, setDistance] = useState('');
+  const d = Number(distance.replace(',', '.'));
+  const valid = distance.trim() !== '' && Number.isFinite(d) && d > 0 && d <= 5000;
+
+  return (
+    <div className="line-tools">
+      <div className="field-label">Linjeverktøy</div>
+      <div className="row wrap">
+        <button className={`btn small ${open ? 'active' : ''}`} onClick={() => setOpen(!open)}>
+          Lag parallell linje
+        </button>
+        <button className="btn small" onClick={() => onStartTool({ kind: 'extend', sourceId: source.id })}>
+          Forleng linje
+        </button>
+        <button className="btn small" onClick={() => onStartTool({ kind: 'merge', sourceId: source.id })}>
+          Slå sammen med …
+        </button>
+      </div>
+      {open && (
+        <form
+          className="card-inset stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (valid) onStartTool({ kind: 'parallel', sourceId: source.id, typeId, distance: d });
+          }}
+        >
+          <div className="stack">
+            <label className="field">
+              <span>Type</span>
+              <select value={typeId} onChange={(e) => setTypeId(e.target.value)}>
+                {LINE_TYPES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Avstand (meter)</span>
+              <input inputMode="decimal" autoFocus placeholder="f.eks. 100" value={distance} onChange={(e) => setDistance(e.target.value)} />
+            </label>
+          </div>
+          <button className="btn primary" disabled={!valid}>
+            Velg side i kartet
+          </button>
+        </form>
+      )}
+    </div>
   );
 }

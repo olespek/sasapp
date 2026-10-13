@@ -5,6 +5,7 @@ import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
 import { createDrawAssist, type DrawAssist } from './drawAssist';
+import { LineTools, lineRefs, type LineTool } from './LineTools';
 import { MeasureControl } from './MeasureControl';
 import { PlanLayer, pinIcon } from './planLayer';
 import { Icon } from '../icons';
@@ -28,6 +29,9 @@ interface Props {
   onGeometryChange(id: string, geometry: Geometry, heading?: number): void;
   onCreated(type: string, geometry: Geometry): void;
   onDrawCancel(): void;
+  lineTool: LineTool | null;
+  onParallel(typeId: string, geometry: Geometry): void;
+  onExtend(id: string, geometry: Geometry): void;
 }
 
 const BASE_KEY = 'sasapp.baselayer';
@@ -115,7 +119,7 @@ function Controller(props: Props) {
       }
     };
     const onClick = () => {
-      if (!cbRef.current.drawType) cbRef.current.onSelect(null);
+      if (!cbRef.current.drawType && !cbRef.current.lineTool) cbRef.current.onSelect(null);
     };
     map.on('baselayerchange', onBase as L.LeafletEventHandlerFn);
     map.on('click', onClick);
@@ -185,7 +189,7 @@ function Controller(props: Props) {
       map.pm.enableDraw('Marker', { markerStyle: { icon: pinIcon(def, null, false) }, continueDrawing: false });
     } else {
       const shape = def.kind === 'line' ? 'Line' : 'Polygon';
-      assist = createDrawAssist(map, shape);
+      assist = createDrawAssist(map, shape, { lines: () => lineRefs(cbRef.current.objects) });
       map.pm.enableDraw(shape, {
         pathOptions,
         templineStyle: { color: def.color },
@@ -206,7 +210,8 @@ function Controller(props: Props) {
   return (
     <>
       <LocateControl />
-      <MeasureControl disabled={!!props.drawType} />
+      <MeasureControl disabled={!!props.drawType || !!props.lineTool} lines={() => lineRefs(cbRef.current.objects)} />
+      <LineTools tool={props.lineTool} objects={props.objects} onParallel={props.onParallel} onExtend={props.onExtend} />
     </>
   );
 }
