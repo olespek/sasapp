@@ -63,9 +63,17 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
         )}
 
         {def?.hasHeight && (
-          <Field label="Høyde over bakken (meter)">
-            <NumberInput value={o.props.height ?? null} disabled={!canEdit} onCommit={(height) => setProps({ height })} />
-          </Field>
+          <>
+            <div className="grid2">
+              <Field label="Høyde MSL (ft)">
+                <NumberInput value={o.props.mslFt ?? null} disabled={!canEdit} onCommit={(mslFt) => setProps({ mslFt })} />
+              </Field>
+              <Field label="Høyde AGL (ft)">
+                <NumberInput value={o.props.aglFt ?? null} disabled={!canEdit} onCommit={(aglFt) => setProps({ aglFt })} />
+              </Field>
+            </div>
+            <div className="muted small">Legges inn manuelt og kontrolleres mot offisielle flykart. MSL = over havet, AGL = over bakken.</div>
+          </>
         )}
 
         {def?.kind === 'aircraft' && (

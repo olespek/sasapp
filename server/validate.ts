@@ -95,15 +95,18 @@ export function props(input: unknown, base: ObjectProps = defaultProps(), def?: 
     else fail('Frist må være en dato (ÅÅÅÅ-MM-DD)');
   }
   if (def?.hasHeight) {
-    if ('height' in p) {
-      const h = p.height;
-      if (h === null || h === '') out.height = null;
-      else if (typeof h === 'number' && Number.isFinite(h) && h >= 0 && h <= 2000) out.height = Math.round(h * 10) / 10;
-      else fail('Høyde må være et tall mellom 0 og 2000 meter');
+    for (const [key, label, min] of [['mslFt', 'Høyde MSL', -1000], ['aglFt', 'Høyde AGL', 0]] as const) {
+      if (!(key in p)) continue;
+      const h = p[key];
+      if (h === null || h === '') out[key] = null;
+      else if (typeof h === 'number' && Number.isFinite(h) && h >= min && h <= 30000) out[key] = Math.round(h);
+      else fail(`${label} må være et helt antall fot mellom ${min} og 30000`);
     }
   } else {
-    delete out.height;
+    delete out.mslFt;
+    delete out.aglFt;
   }
+  delete (out as { height?: unknown }).height;
   if (isAircraft) {
     if ('aircraftModel' in p) {
       if (!getAircraft(p.aircraftModel as string)) fail('Ukjent flytype');

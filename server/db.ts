@@ -62,6 +62,9 @@ const MIGRATIONS: string[] = [
      ${AIRCRAFT.map((a) => `WHEN '${a.id}' THEN '${a.name.replace(/'/g, "''")}'`).join(' ')}
      ELSE name END
    WHERE type = 'fly' AND name = '';`,
+  // Hindringer: høyde i meter (kortvarig første versjon) blir AGL i fot.
+  `UPDATE objects SET props = json_set(json_remove(props, '$.height'), '$.aglFt', CAST(round(json_extract(props, '$.height') * 3.28084) AS INTEGER))
+   WHERE type = 'obstacle' AND json_extract(props, '$.height') IS NOT NULL;`,
 ];
 
 export function openDb(path: string): DB {

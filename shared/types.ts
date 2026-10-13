@@ -58,8 +58,10 @@ export interface ObjectProps {
   quantity: number | null;
   dueDate: string | null; // ÅÅÅÅ-MM-DD
   notes: string;
-  /** For hindringer: høyde over bakken i meter. */
-  height?: number | null;
+  /** For hindringer: toppen av hindringen over havet (MSL), i fot. Legges inn manuelt fra offisielle kilder. */
+  mslFt?: number | null;
+  /** For hindringer: høyde over bakken (AGL), i fot. */
+  aglFt?: number | null;
   /** Kun for fly: id fra flykatalogen. */
   aircraftModel?: string;
   /** Kun for fly: retning nesen peker, i grader (0 = nord, 90 = øst). */
@@ -134,6 +136,14 @@ export function canEditPlan(user: Pick<User, 'role'> | null | undefined, plan: P
   if (!user) return false;
   if (user.role === 'admin') return true;
   return user.role === 'editor' && !plan.locked;
+}
+
+/** «72 ft MSL / 54 ft AGL», eller null hvis ingen høyde er lagt inn. */
+export function obstacleHeightText(p: Pick<ObjectProps, 'mslFt' | 'aglFt'>): string | null {
+  const parts: string[] = [];
+  if (p.mslFt != null) parts.push(`${p.mslFt} ft MSL`);
+  if (p.aglFt != null) parts.push(`${p.aglFt} ft AGL`);
+  return parts.length ? parts.join(' / ') : null;
 }
 
 export function defaultProps(): ObjectProps {

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app.js';
+import { obstacleHeightText } from '../shared/types.js';
 import { hashPassword } from './auth.js';
 import { openDb, type DB } from './db.js';
 import * as repo from './repo.js';
@@ -77,16 +78,32 @@ describe('objekter og rettigheter', () => {
     await a.patch('/api/objects/gammel').set(H).send({ type: 'gangvei' }).expect(400);
   });
 
-  it('hindring har høyde over bakken, andre punkter ikke', async () => {
+  it('hindring har høyde MSL og AGL i fot, andre punkter ikke', async () => {
     const a = await login('red');
     const geometry = { type: 'Point', coordinates: [5.644, 58.887] };
-    const o = (await a.post('/api/objects').set(H).send({ type: 'obstacle', name: 'Radarmast', geometry, props: { height: 42.5 } }).expect(201)).body;
-    expect(o.props.height).toBe(42.5);
-    await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { height: -3 } }).expect(400);
-    const cleared = (await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { height: null } }).expect(200)).body;
-    expect(cleared.props.height).toBeNull();
-    const t = (await a.post('/api/objects').set(H).send({ type: 'toalett', geometry, props: { height: 10 } }).expect(201)).body;
-    expect(t.props.height).toBeUndefined();
+    const o = (await a.post('/api/objects').set(H).send({ type: 'obstacle', name: 'Mast GND radar', geometry, props: { mslFt: 143, aglFt: 125 } }).expect(201)).body;
+    expect(o.props).toMatchObject({ mslFt: 143, aglFt: 125 });
+    expect(obstacleHeightText(o.props)).toBe('143 ft MSL / 125 ft AGL');
+    await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { aglFt: -3 } }).expect(400);
+    const cleared = (await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { mslFt: null } }).expect(200)).body;
+    expect(cleared.props.mslFt).toBeNull();
+    expect(obstacleHeightText(cleared.props)).toBe('125 ft AGL');
+    const t = (await a.post('/api/objects').set(H).send({ type: 'toalett', geometry, props: { aglFt: 10 } }).expect(201)).body;
+    expect(t.props.aglFt).toBeUndefined();
+  });
+
+  it('migrering gjør gammel høyde i meter om til AGL i fot', () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'sasapp-')), 'test.db');
+    const now = new Date().toISOString();
+    const old = openDb(file);
+    old.exec('PRAGMA user_version = 2');
+    old.prepare("INSERT INTO objects (id, type, name, geometry, props, created_at, updated_at) VALUES ('o', 'obstacle', 'Mast', '{}', ?, ?, ?)").run(JSON.stringify({ status: 'planned', height: 38.1 }), now, now);
+    old.close();
+    const db2 = openDb(file);
+    const props = repo.getObject(db2, 'o')!.props as Record<string, unknown>;
+    expect(props.aglFt).toBe(125);
+    expect(props.height).toBeUndefined();
+    db2.close();
   });
 
   it('display line #1–#3 og flyparkering ligger under Operativ', async () => {

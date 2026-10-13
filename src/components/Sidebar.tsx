@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
 import { GROUPS, OBJECT_TYPES, getObjectType, panelCount } from '../../shared/catalog';
 import { formatLength, measure } from '../../shared/geo';
-import { STATUSES, STATUS_COLORS, STATUS_LABELS, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
+import { STATUSES, STATUS_COLORS, STATUS_LABELS, obstacleHeightText, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
 import { api } from '../api';
 import type { MapApi } from '../map/PlanMap';
 import { AdminPanel } from './AdminPanel';
@@ -166,7 +166,7 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
                   {def?.label}
                   {o.props.responsible && ` · ${o.props.responsible}`}
                   {o.props.quantity !== null && ` · ${o.props.quantity} stk`}
-                  {o.props.height != null && ` · ${o.props.height.toLocaleString('nb-NO')} m høy`}
+                  {obstacleHeightText(o.props) && ` · ${obstacleHeightText(o.props)}`}
                 </div>
               </div>
               <div className="obj-side">
