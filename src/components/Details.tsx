@@ -6,9 +6,7 @@ import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObje
 import type { api } from '../api';
 import { TypeSwatch } from './Palette';
 import { Icon } from '../icons';
-import { nearestLine } from '../map/drawAssist';
-import { lineRefs, type LineTool } from '../map/LineTools';
-import { formatDistance } from '../map/MeasureControl';
+import type { LineTool } from '../map/LineTools';
 
 interface Props {
   object: PlanObject;
@@ -18,12 +16,10 @@ interface Props {
   onUpdate(id: string, patch: Parameters<typeof api.updateObject>[1]): void;
   onDelete(id: string): void;
   onClose(): void;
-  /** Alle objekter i planen, for avstand til nærmeste linje. */
-  objects: PlanObject[];
   onStartTool(tool: LineTool): void;
 }
 
-export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpdate, onDelete, onClose, objects, onStartTool }: Props) {
+export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpdate, onDelete, onClose, onStartTool }: Props) {
   const def = getObjectType(o.type);
   const spec = getAircraft(o.props.aircraftModel);
   const m = measure(o.geometry);
@@ -130,8 +126,6 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
             )}
           </div>
         )}
-
-        {o.geometry.type === 'Point' && <NearestLineInfo point={o.geometry.coordinates} objects={objects} />}
 
         {canEdit && o.geometry.type === 'LineString' && <LineToolsBox source={o} onStartTool={onStartTool} />}
 
@@ -242,17 +236,6 @@ function NumberInput(props: { value: number | null; disabled?: boolean; onCommit
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
     />
-  );
-}
-
-/** Avstand fra et punkt (f.eks. hindring eller fly) til nærmeste linje i planen. */
-function NearestLineInfo({ point, objects }: { point: [number, number]; objects: PlanObject[] }) {
-  const near = nearestLine(point, lineRefs(objects));
-  if (!near) return null;
-  return (
-    <div className="measure">
-      Nærmeste linje: <b>{formatDistance(near.distance)}</b> til {near.name}
-    </div>
   );
 }
 

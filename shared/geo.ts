@@ -209,3 +209,35 @@ export function mergeLines(a: Position[], b: Position[]): Position[] {
   const merged = bestD < 0.5 ? [...first, ...second.slice(1)] : [...first, ...second];
   return first === a || first[0] === a[0] ? merged : rev(merged);
 }
+
+export interface Closest {
+  from: Position;
+  to: Position;
+  distance: number;
+}
+
+/**
+ * Korteste avstand mellom to former, gitt som punktlister (ett punkt, en linje eller en lukket
+ * omkrets). For former som ikke krysser hverandre ligger korteste avstand alltid fra et knekkpunkt
+ * på den ene til den andre, så vi sjekker knekkpunktene begge veier.
+ */
+export function closestBetween(a: Position[], b: Position[]): Closest | null {
+  if (a.length === 0 || b.length === 0) return null;
+  let best: Closest | null = null;
+  const consider = (from: Position, shape: Position[], flip: boolean) => {
+    let to: Position;
+    let d: number;
+    if (shape.length === 1) {
+      to = shape[0];
+      d = distance(from, to);
+    } else {
+      const n = nearestOnLine(from, shape)!;
+      to = n.point;
+      d = n.distance;
+    }
+    if (!best || d < best.distance) best = flip ? { from: to, to: from, distance: d } : { from, to, distance: d };
+  };
+  for (const p of a) consider(p, b, false);
+  for (const p of b) consider(p, a, true);
+  return best;
+}

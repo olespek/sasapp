@@ -58,7 +58,7 @@ export const api = {
   updatePlan: (patch: Partial<Pick<Plan, 'name' | 'center' | 'zoom'>>) => call<Plan>('PATCH', '/api/plan', patch),
   setLocked: (locked: boolean) => call<Plan>('POST', '/api/plan/lock', { locked }),
 
-  createObject: (o: Pick<PlanObject, 'type' | 'name' | 'geometry'> & { props?: Partial<PlanObject['props']> }) =>
+  createObject: (o: Pick<PlanObject, 'type' | 'name' | 'geometry'> & { id?: string; props?: Partial<PlanObject['props']> }) =>
     call<PlanObject>('POST', '/api/objects', o),
   updateObject: (id: string, patch: Partial<Pick<PlanObject, 'type' | 'name' | 'geometry'>> & { props?: Partial<PlanObject['props']> }) =>
     call<PlanObject>('PATCH', `/api/objects/${id}`, patch),

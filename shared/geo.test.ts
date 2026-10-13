@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, aircraftShapes } from './aircraft.js';
 import { getObjectType, panelCount } from './catalog.js';
-import { bearing, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea } from './geo.js';
+import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea } from './geo.js';
 import type { Position } from './types.js';
 
 const SOLA: Position = [5.6442, 58.8873];
@@ -115,5 +115,25 @@ describe('slå sammen linjer', () => {
     const a: Position[] = [SOLA, offset(SOLA, 0, 100)];
     const b: Position[] = [offset(SOLA, 0, 120), offset(SOLA, 0, 200)];
     expect(mergeLines(a, b)).toHaveLength(4);
+  });
+});
+
+describe('korteste avstand mellom objekter', () => {
+  it('punkt til linje', () => {
+    const line: Position[] = [SOLA, offset(SOLA, 0, 300)];
+    const c = closestBetween([offset(SOLA, 80, 150)], line)!;
+    expect(c.distance).toBeCloseTo(80, 1);
+  });
+
+  it('linje til område, og retningen beholdes', () => {
+    const line: Position[] = [SOLA, offset(SOLA, 0, 300)];
+    const box: Position[] = [offset(SOLA, 50, 100), offset(SOLA, 90, 100), offset(SOLA, 90, 140), offset(SOLA, 50, 140), offset(SOLA, 50, 100)];
+    const c = closestBetween(line, box)!;
+    expect(c.distance).toBeCloseTo(50, 1);
+    expect(nearestOnLine(c.from, line)!.distance).toBeLessThan(0.01); // from ligger på linjen
+  });
+
+  it('punkt til punkt', () => {
+    expect(closestBetween([SOLA], [offset(SOLA, 30, 40)])!.distance).toBeCloseTo(50, 1);
   });
 });

@@ -11,6 +11,7 @@ import { Palette } from './components/Palette';
 import { Sidebar, type Tab } from './components/Sidebar';
 import { PlanMap, type MapApi } from './map/PlanMap';
 import type { LineTool } from './map/LineTools';
+import { HistoryConflict, checkConflicts, fieldsOf, perform, type HistoryAction, type HistoryEntry } from './history';
 import { mergeLines } from '../shared/geo';
 
 type Toast = { id: number; text: string; error?: boolean };
@@ -55,6 +56,10 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const [editMode, setEditMode] = useState(false);
   const [draw, setDraw] = useState<{ type: string; model?: string } | null>(null);
   const [lineTool, setLineTool] = useState<LineTool | null>(null);
+  const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
+  const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const objectsRef = useRef<PlanObject[]>([]);
   const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
   const [showLabels, setShowLabels] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<Version | null>(null);
@@ -129,6 +134,32 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
     }
   }, [editing]);
 
+  // Hurtigtaster: Ctrl/⌘+Z angrer, Ctrl/⌘+Shift+Z eller Ctrl+Y gjør om. Under tegning fjerner
+  // Ctrl/⌘+Z og Backspace siste punkt i stedet.
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
+      if ((mod && key === 'z' && !e.shiftKey) || (!mod && e.key === 'Backspace')) {
+        if (mapApi.current?.removeLastVertex()) {
+          e.preventDefault();
+          return;
+        }
+        if (e.key === 'Backspace') return;
+        e.preventDefault();
+        runHistory('undo');
+      } else if (mod && ((key === 'z' && e.shiftKey) || key === 'y')) {
+        e.preventDefault();
+        runHistory('redo');
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  });
+
   useEffect(() => {
     if (!lineTool) return;
     const onKey = (e: KeyboardEvent) => {
@@ -142,6 +173,44 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const selected = shownObjects.find((o) => o.id === selectedId) ?? null;
 
   const upsertLocal = (o: PlanObject) => setObjects((list) => list.map((x) => (x.id === o.id ? o : x)));
+  objectsRef.current = objects;
+
+  /** Legg en endring i angre-historikken. actions er det som skal til for å angre den. */
+  const record = (label: string, actions: HistoryAction[]) => {
+    setUndoStack((s) => [...s.slice(-99), { label, actions }]);
+    setRedoStack([]);
+  };
+  const labelOf = (o: Pick<PlanObject, 'name' | 'type'>) => o.name || getObjectType(o.type)?.label || 'objekt';
+
+  const runHistory = async (from: 'undo' | 'redo') => {
+    const stack = from === 'undo' ? undoStack : redoStack;
+    const entry = stack[stack.length - 1];
+    if (!entry || historyBusy) return;
+    setHistoryBusy(true);
+    const pop = () => (from === 'undo' ? setUndoStack : setRedoStack)((s) => s.slice(0, -1));
+    try {
+      checkConflicts(entry.actions, objectsRef.current);
+      const inverses: HistoryAction[] = [];
+      let current = objectsRef.current;
+      for (const a of entry.actions) {
+        const { inverse, result, removedId } = await perform(a, current);
+        inverses.unshift(inverse);
+        if (removedId) current = current.filter((o) => o.id !== removedId);
+        if (result) current = current.some((o) => o.id === result.id) ? current.map((o) => (o.id === result.id ? result : o)) : [...current, result];
+      }
+      setObjects(current);
+      pop();
+      (from === 'undo' ? setRedoStack : setUndoStack)((s) => [...s, { label: entry.label, actions: inverses }]);
+      toast(`${from === 'undo' ? 'Angret' : 'Gjort om'}: ${entry.label}`);
+    } catch (err) {
+      if (err instanceof HistoryConflict) {
+        pop();
+        toast(`Kan ikke ${from === 'undo' ? 'angre' : 'gjøre om'}: ${err.message}`, true);
+      } else fail(err);
+    } finally {
+      setHistoryBusy(false);
+    }
+  };
 
   const onCreated = async (type: string, geometry: Geometry) => {
     const model = draw?.model;
@@ -151,6 +220,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
       const created = await api.createObject({ type, name: '', geometry, props });
       setObjects((list) => (list.some((o) => o.id === created.id) ? list : [...list, created]));
       setSelectedId(created.id);
+      record(`La til ${labelOf(created)}`, [{ do: 'delete', obj: created }]);
     } catch (err) {
       fail(err);
     }
@@ -161,7 +231,10 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
     if (!current) return;
     upsertLocal({ ...current, geometry, props: heading !== undefined ? { ...current.props, heading } : current.props });
     try {
-      upsertLocal(await api.updateObject(id, { geometry, ...(heading !== undefined ? { props: { heading } } : {}) }));
+      const after = await api.updateObject(id, { geometry, ...(heading !== undefined ? { props: { heading } } : {}) });
+      upsertLocal(after);
+      record(`${heading !== undefined ? 'Flyttet/rotert' : 'Endret form på'} ${labelOf(after)}`, [{ do: 'patch', id, to: fieldsOf(current), expectUpdatedAt: after.updatedAt }]);
+      return after;
     } catch (err) {
       upsertLocal(current);
       fail(err);
@@ -174,6 +247,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
       const created = await api.createObject({ type: typeId, name: '', geometry });
       setObjects((list) => (list.some((o) => o.id === created.id) ? list : [...list, created]));
       setSelectedId(created.id);
+      record(`Laget parallell linje (${labelOf(created)})`, [{ do: 'delete', obj: created }]);
       toast('Parallell linje er laget');
     } catch (err) {
       fail(err);
@@ -200,8 +274,13 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
     setLineTool(null);
     try {
       const geometry: Geometry = { type: 'LineString', coordinates: mergeLines(a.geometry.coordinates, b.geometry.coordinates) };
-      upsertLocal(await api.updateObject(a.id, { geometry }));
+      const after = await api.updateObject(a.id, { geometry });
+      upsertLocal(after);
       await api.deleteObject(b.id);
+      record(`Slo sammen ${labelOf(a)} og ${labelOf(b)}`, [
+        { do: 'restore', obj: b },
+        { do: 'patch', id: a.id, to: fieldsOf(a), expectUpdatedAt: after.updatedAt },
+      ]);
       setObjects((list) => list.filter((o) => o.id !== b.id));
       setSelectedId(a.id);
       toast('Linjene er slått sammen');
@@ -220,16 +299,21 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   };
 
   const onUpdate = async (id: string, patch: Parameters<typeof api.updateObject>[1]) => {
+    const before = objectsRef.current.find((o) => o.id === id);
     try {
-      upsertLocal(await api.updateObject(id, patch));
+      const after = await api.updateObject(id, patch);
+      upsertLocal(after);
+      if (before) record(`Endret ${labelOf(after)}`, [{ do: 'patch', id, to: fieldsOf(before), expectUpdatedAt: after.updatedAt }]);
     } catch (err) {
       fail(err);
     }
   };
 
   const onDelete = async (id: string) => {
+    const before = objectsRef.current.find((o) => o.id === id);
     try {
       await api.deleteObject(id);
+      if (before) record(`Slettet ${labelOf(before)}`, [{ do: 'restore', obj: before }]);
       setObjects((list) => list.filter((o) => o.id !== id));
       setSelectedId(null);
     } catch (err) {
@@ -282,6 +366,26 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
             <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
             <span>Redigering</span>
           </label>
+        )}
+        {editing && (
+          <div className="history-btns">
+            <button
+              className="icon-btn"
+              disabled={!undoStack.length || historyBusy}
+              title={undoStack.length ? `Angre: ${undoStack[undoStack.length - 1].label} (Ctrl/⌘+Z)` : 'Ingenting å angre'}
+              onClick={() => runHistory('undo')}
+            >
+              <Icon name="undo-2" size={18} />
+            </button>
+            <button
+              className="icon-btn"
+              disabled={!redoStack.length || historyBusy}
+              title={redoStack.length ? `Gjør om: ${redoStack[redoStack.length - 1].label} (Ctrl/⌘+Shift+Z)` : 'Ingenting å gjøre om'}
+              onClick={() => runHistory('redo')}
+            >
+              <Icon name="redo-2" size={18} />
+            </button>
+          </div>
         )}
         {access.isAdmin && (
           <button className="btn" onClick={toggleLock}>
@@ -390,7 +494,6 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
             onUpdate={onUpdate}
             onDelete={onDelete}
             onClose={() => setSelectedId(null)}
-            objects={objects}
             onStartTool={(t) => {
               setDraw(null);
               setLineTool(t);
@@ -417,7 +520,7 @@ function LineToolHint({ tool, onCancel }: { tool: LineTool; onCancel: () => void
     tool.kind === 'parallel'
       ? `Parallell linje ${tool.distance.toLocaleString('nb-NO')} m: flytt musen til siden linjen skal ligge på, og klikk for å lage den.`
       : tool.kind === 'extend'
-        ? 'Forleng: klikk på enden (+) du vil fortsette fra, og tegn videre. Hold Shift for 45°/90°. Dobbeltklikk for å avslutte.'
+        ? 'Forleng: klikk på enden (+) du vil fortsette fra, og tegn videre. Shift: 45°/90°. Alt/Option: avstand. Dobbeltklikk for å avslutte.'
         : 'Slå sammen: klikk på linjen som skal slås sammen med denne.';
   return (
     <div className="draw-hint">
@@ -438,8 +541,8 @@ function DrawHint({ type, onCancel }: { type: string; onCancel: () => void }) {
       : def.kind === 'aircraft'
         ? 'Klikk i kartet der flyet skal stå. Du kan rotere det etterpå.'
         : def.kind === 'line'
-          ? 'Klikk for hvert knekkpunkt. Hold Shift for 45°/90°. Dobbeltklikk eller klikk på siste punkt for å avslutte.'
-          : 'Klikk for hvert hjørne. Hold Shift for 45°/90°. Klikk på første punkt eller dobbeltklikk for å avslutte.';
+          ? 'Klikk for hvert knekkpunkt. Shift: 45°/90°. Alt/Option: avstand. Backspace: angre punkt. Dobbeltklikk for å avslutte.'
+          : 'Klikk for hvert hjørne. Shift: 45°/90°. Alt/Option: avstand. Backspace: angre punkt. Klikk på første punkt for å avslutte.';
   return (
     <div className="draw-hint">
       <b>{def.label}:</b> {text}

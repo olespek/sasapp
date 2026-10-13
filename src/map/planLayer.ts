@@ -4,7 +4,7 @@
 import L from 'leaflet';
 import { aircraftShapes, getAircraft } from '../../shared/aircraft';
 import { getObjectType, type ObjectTypeDef } from '../../shared/catalog';
-import { bearing, normalizeHeading } from '../../shared/geo';
+import { bearing, constrainAngle, normalizeHeading } from '../../shared/geo';
 import { STATUS_COLORS, obstacleHeightText, type Geometry, type PlanObject, type Position } from '../../shared/types';
 import { iconSvg } from '../icons';
 
@@ -191,6 +191,7 @@ export class PlanLayer {
     this.group.addLayer(layer);
     if (editing && (def.kind === 'line' || def.kind === 'polygon')) {
       (layer as L.Polyline).pm.enable({ allowSelfIntersection: true, draggable: true, snappable: true });
+      lockAngleOnVertexDrag(this.map, layer as L.Polyline, def.kind === 'polygon');
     }
     if (selected && 'bringToFront' in layer) (layer as L.Path).bringToFront();
     this.entries.set(o.id, { key, layer, handles });
@@ -259,4 +260,65 @@ function debounce(fn: () => void, ms: number): () => void {
     clearTimeout(t);
     t = setTimeout(fn, ms);
   };
+}
+
+/**
+ * Holder man Shift mens man drar et knekkpunkt, låses retningen fra nabopunktet til 45°-steg
+ * i forhold til linjestykket før (0° = rett forlengelse, 90° = rett vinkel).
+ * Endepunktet låses mot sitt eneste nabostykke; andre punkter mot stykket bak dem.
+ */
+function lockAngleOnVertexDrag(map: L.Map, layer: L.Polyline, closed: boolean): void {
+  type DragStart = { markerEvent?: { target?: L.Marker }; indexPath?: number[] };
+  layer.on('pm:markerdragstart', (ev) => {
+    const e = ev as unknown as DragStart;
+    const marker = e.markerEvent?.target;
+    const path = e.indexPath;
+    const draggable = (marker as unknown as { dragging?: { _draggable?: L.Draggable & { _newPos: L.Point } } })?.dragging?._draggable;
+    if (!marker || !path || !draggable) return;
+    const index = path[path.length - 1];
+    const ring = (): L.LatLng[] => {
+      const all = layer.getLatLngs() as unknown;
+      return (closed ? (all as L.LatLng[][])[path.length > 1 ? path[0] : 0] : all) as L.LatLng[];
+    };
+    const pos = (ll: L.LatLng): Position => [ll.lng, ll.lat];
+    let exact: Position | null = null;
+    const onPredrag = (de: L.LeafletEvent) => {
+      const orig = (de as unknown as { originalEvent?: MouseEvent }).originalEvent;
+      exact = null;
+      if (!orig?.shiftKey) return;
+      const pts = ring();
+      const n = pts.length;
+      if (n < 2) return;
+      let prev: L.LatLng;
+      let before: L.LatLng | null;
+      if (closed) {
+        prev = pts[(index - 1 + n) % n];
+        before = n > 2 ? pts[(index - 2 + n) % n] : null;
+      } else if (index > 0) {
+        prev = pts[index - 1];
+        before = index > 1 ? pts[index - 2] : null;
+      } else {
+        prev = pts[1];
+        before = n > 2 ? pts[2] : null;
+      }
+      const cursor = map.layerPointToLatLng(draggable._newPos);
+      const c = constrainAngle(before ? pos(before) : null, pos(prev), pos(cursor));
+      exact = c;
+      draggable._newPos = map.latLngToLayerPoint(L.latLng(c[1], c[0]));
+    };
+    draggable.on('predrag', onPredrag);
+    layer.once('pm:markerdragend', () => {
+      draggable.off('predrag', onPredrag);
+      // Kartet runder markøren av til hele piksler. Sett det nøyaktige punktet før endringen lagres.
+      if (exact) {
+        const ll = ring()[index];
+        if (ll) {
+          ll.lat = exact[1];
+          ll.lng = exact[0];
+          marker.setLatLng(ll);
+          layer.redraw();
+        }
+      }
+    });
+  });
 }

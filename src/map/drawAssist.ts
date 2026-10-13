@@ -6,34 +6,17 @@
 // justerer e.latlng når Shift er nede, og en lytter ETTER Geoman som tegner lengdene.
 
 import L from 'leaflet';
-import { constrainAngle, distance, nearestOnLine } from '../../shared/geo';
+import { constrainAngle, distance } from '../../shared/geo';
 import type { Position } from '../../shared/types';
-import { formatDistance } from './MeasureControl';
+import { LABEL_ANCHOR, formatDistance } from './MeasureControl';
 
 type Shape = 'Line' | 'Polygon';
-
-/** En linje i planen som det kan vises avstand til. */
-export interface LineRef {
-  name: string;
-  coords: Position[];
-}
 
 export interface DrawAssistOptions {
   /** Punktet før startpunktet, når man forlenger en eksisterende linje. Brukes til vinkellåsen. */
   before?: Position;
-  /** Linjene i planen, for å vise avstand fra musepekeren til nærmeste linje. */
-  lines?: () => LineRef[];
 }
 
-/** Nærmeste linje fra et punkt, innen 2 km. */
-export function nearestLine(p: Position, lines: LineRef[]): { name: string; distance: number } | null {
-  let best: { name: string; distance: number } | null = null;
-  for (const l of lines) {
-    const n = nearestOnLine(p, l.coords);
-    if (n && (!best || n.distance < best.distance)) best = { name: l.name, distance: n.distance };
-  }
-  return best && best.distance <= 2000 ? best : null;
-}
 
 interface DrawInternals {
   _layer?: L.Polyline;
@@ -69,7 +52,7 @@ export function createDrawAssist(map: L.Map, shape: Shape, opts: DrawAssistOptio
     if (d < 0.05) return;
     const mid: Position = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     labels.addLayer(
-      L.marker(toLL(mid), { opacity: 0, interactive: false, keyboard: false }).bindTooltip(formatDistance(d), {
+      L.marker(toLL(mid), { icon: LABEL_ANCHOR, interactive: false, keyboard: false }).bindTooltip(formatDistance(d), {
         permanent: true,
         direction: 'center',
         className: cls,
@@ -80,21 +63,6 @@ export function createDrawAssist(map: L.Map, shape: Shape, opts: DrawAssistOptio
   const render = () => {
     labels.clearLayers();
     const pts = placed();
-    const hintLL = draw()?._hintMarker?.getLatLng();
-    // Avstand fra musepekeren til nærmeste linje i planen.
-    if (hintLL && opts.lines) {
-      const near = nearestLine(toPos(hintLL), opts.lines());
-      if (near) {
-        labels.addLayer(
-          L.marker(hintLL, { opacity: 0, interactive: false, keyboard: false }).bindTooltip(`${formatDistance(near.distance)} til ${near.name}`, {
-            permanent: true,
-            direction: 'bottom',
-            offset: [0, 18],
-            className: 'measure-label near',
-          }),
-        );
-      }
-    }
     if (pts.length === 0) return;
     for (let i = 1; i < pts.length; i++) label(pts[i - 1], pts[i]);
     const hint = draw()?._hintMarker?.getLatLng();

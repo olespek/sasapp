@@ -5,7 +5,8 @@ import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
 import { createDrawAssist, type DrawAssist } from './drawAssist';
-import { LineTools, lineRefs, type LineTool } from './LineTools';
+import { AltMeasure } from './AltMeasure';
+import { LineTools, type LineTool } from './LineTools';
 import { MeasureControl } from './MeasureControl';
 import { PlanLayer, pinIcon } from './planLayer';
 import { Icon } from '../icons';
@@ -14,6 +15,8 @@ export interface MapApi {
   focus(id: string): void;
   getView(): { center: [number, number]; zoom: number };
   flyHome(): void;
+  /** Fjerner siste punkt hvis en linje/et område er under tegning. Returnerer true hvis noe ble fjernet. */
+  removeLastVertex(): boolean;
 }
 
 interface Props {
@@ -143,6 +146,18 @@ function Controller(props: Props) {
         return { center: [Math.round(c.lat * 1e6) / 1e6, Math.round(c.lng * 1e6) / 1e6], zoom: map.getZoom() };
       },
       flyHome: () => map.flyTo(cbRef.current.plan.center, cbRef.current.plan.zoom),
+      removeLastVertex: () => {
+        const draws = map.pm.Draw as unknown as Record<string, { enabled(): boolean; _layer?: L.Polyline; _removeLastVertex(): void }>;
+        for (const shape of ['Line', 'Polygon']) {
+          const d = draws[shape];
+          if (d?.enabled() && ((d._layer?.getLatLngs() as L.LatLng[] | undefined)?.length ?? 0) > 0) {
+            d._removeLastVertex();
+            map.fire('mousemove', { latlng: map.getCenter() }); // oppdater lengdene
+            return true;
+          }
+        }
+        return false;
+      },
     };
   }, [map, props.apiRef]);
 
@@ -189,7 +204,7 @@ function Controller(props: Props) {
       map.pm.enableDraw('Marker', { markerStyle: { icon: pinIcon(def, null, false) }, continueDrawing: false });
     } else {
       const shape = def.kind === 'line' ? 'Line' : 'Polygon';
-      assist = createDrawAssist(map, shape, { lines: () => lineRefs(cbRef.current.objects) });
+      assist = createDrawAssist(map, shape);
       map.pm.enableDraw(shape, {
         pathOptions,
         templineStyle: { color: def.color },
@@ -210,7 +225,12 @@ function Controller(props: Props) {
   return (
     <>
       <LocateControl />
-      <MeasureControl disabled={!!props.drawType || !!props.lineTool} lines={() => lineRefs(cbRef.current.objects)} />
+      <MeasureControl disabled={!!props.drawType || !!props.lineTool} />
+      <AltMeasure
+        objects={props.objects.filter((o) => !props.hiddenGroups.has(getObjectType(o.type)?.group ?? ''))}
+        selectedId={props.selectedId}
+        drawing={!!props.drawType || !!props.lineTool}
+      />
       <LineTools tool={props.lineTool} objects={props.objects} onParallel={props.onParallel} onExtend={props.onExtend} />
     </>
   );

@@ -10,8 +10,8 @@ import { getObjectType } from '../../shared/catalog';
 import { nearestOnLine, offsetLine } from '../../shared/geo';
 import type { Geometry, PlanObject, Position } from '../../shared/types';
 import { iconSvg } from '../icons';
-import { createDrawAssist, type LineRef } from './drawAssist';
-import { formatDistance } from './MeasureControl';
+import { createDrawAssist } from './drawAssist';
+import { LABEL_ANCHOR, formatDistance } from './MeasureControl';
 
 export type LineTool =
   | { kind: 'parallel'; sourceId: string; typeId: string; distance: number }
@@ -19,13 +19,6 @@ export type LineTool =
   | { kind: 'merge'; sourceId: string };
 
 const toLL = (p: Position): L.LatLngExpression => [p[1], p[0]];
-
-/** Linjene i planen, til «avstand til nærmeste linje». */
-export function lineRefs(objects: PlanObject[], exceptId?: string): LineRef[] {
-  return objects
-    .filter((o) => o.geometry.type === 'LineString' && o.id !== exceptId)
-    .map((o) => ({ name: o.name || getObjectType(o.type)?.label || 'linje', coords: (o.geometry as { coordinates: Position[] }).coordinates }));
-}
 
 interface Props {
   tool: LineTool | null;
@@ -68,7 +61,7 @@ export function LineTools({ tool, objects, onParallel, onExtend }: Props) {
         const a = line[Math.max(0, mid - 1)];
         const b = line[mid];
         g.addLayer(
-          L.marker(toLL([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]), { opacity: 0, interactive: false, keyboard: false }).bindTooltip(
+          L.marker(toLL([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]), { icon: LABEL_ANCHOR, interactive: false, keyboard: false }).bindTooltip(
             `${formatDistance(tool.distance)} fra linjen`,
             { permanent: true, direction: 'center', className: 'measure-label live' },
           ),
@@ -107,7 +100,7 @@ export function LineTools({ tool, objects, onParallel, onExtend }: Props) {
       container.classList.remove('tool-active');
       const anchor = end === 'end' ? coords[coords.length - 1] : coords[0];
       const before = end === 'end' ? coords[coords.length - 2] : coords[1];
-      assist = createDrawAssist(map, 'Line', { before, lines: () => lineRefs(cb.current.objects, source!.id) });
+      assist = createDrawAssist(map, 'Line', { before });
       map.pm.enableDraw('Line', {
         pathOptions: { color: def?.color, dashArray: def?.dash },
         templineStyle: { color: def?.color },

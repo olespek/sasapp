@@ -474,6 +474,20 @@ h4 {
   transform: translateX(18px);
 }
 
+.history-btns {
+  display: flex;
+  gap: 2px;
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.icon-btn:disabled:hover {
+  background: transparent;
+}
+
 .user-menu details {
   position: relative;
 }
@@ -922,10 +936,29 @@ table.summary .sub {
   cursor: pointer !important;
 }
 
-.leaflet-tooltip.measure-label.near {
-  background: #fff;
-  color: var(--navy);
-  border: 1.5px solid var(--navy);
+
+.label-anchor {
+  background: none;
+  border: none;
+}
+
+.leaflet-tooltip.alt-label {
+  background: #f24822;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.leaflet-tooltip.alt-label::before {
+  display: none;
+}
+
+.alt-measuring .leaflet-interactive {
+  cursor: default;
 }
 
 .measure-panel {

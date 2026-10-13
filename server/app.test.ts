@@ -112,6 +112,16 @@ describe('objekter og rettigheter', () => {
     expect(getObjectType('displayline')?.label).toBe('Display line #3');
   });
 
+  it('slettet objekt kan gjenopprettes med samme id (angre)', async () => {
+    const a = await login('red');
+    const o = (await a.post('/api/objects').set(H).send({ type: 'publikumsomrade', name: 'Sør', geometry: polygon }).expect(201)).body;
+    await a.delete(`/api/objects/${o.id}`).set(H).expect(200);
+    const back = (await a.post('/api/objects').set(H).send({ id: o.id, type: o.type, name: o.name, geometry: o.geometry, props: o.props }).expect(201)).body;
+    expect(back.id).toBe(o.id);
+    await a.post('/api/objects').set(H).send({ id: o.id, type: o.type, geometry: o.geometry }).expect(409);
+    await a.post('/api/objects').set(H).send({ id: 'ikke-en-uuid', type: o.type, geometry: o.geometry }).expect(400);
+  });
+
   it('avviser feil geometritype', async () => {
     const a = await login('red');
     await a.post('/api/objects').set(H).send({ type: 'toalett', geometry: polygon }).expect(400);

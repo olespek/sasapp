@@ -207,11 +207,17 @@ export function createApp(db: DB, opts: AppOptions = {}) {
   });
 
   app.post('/api/objects', requireEdit, (req, res) => {
-    const def = v.objectType(req.body?.type);
+    // Angre av sletting sender med den opprinnelige id-en, slik at objektet kommer tilbake som før.
+    const restoreId = req.body?.id;
+    if (restoreId !== undefined) {
+      if (typeof restoreId !== 'string' || !/^[0-9a-f-]{36}$/i.test(restoreId)) throw new HttpError(400, 'Ugyldig id');
+      if (repo.getObject(db, restoreId)) throw new HttpError(409, 'Objektet finnes allerede');
+    }
+    const def = v.objectType(req.body?.type, { allowRetired: restoreId !== undefined });
     const isAircraft = def.kind === 'aircraft';
     const now = new Date().toISOString();
     const obj: PlanObject = {
-      id: randomUUID(),
+      id: restoreId ?? randomUUID(),
       type: def.id,
       name: v.name(req.body?.name),
       geometry: v.geometry(req.body?.geometry, v.expectedGeometryType(def.id)),
@@ -225,7 +231,7 @@ export function createApp(db: DB, opts: AppOptions = {}) {
     if (isAircraft && !obj.name) obj.name = getAircraft(obj.props.aircraftModel)?.name ?? '';
     repo.insertObject(db, obj);
     hub.broadcast({ kind: 'object-upsert', object: obj });
-    log(req, 'create', `La til ${describe(obj)}`, obj.id);
+    log(req, 'create', `${restoreId ? 'Gjenopprettet' : 'La til'} ${describe(obj)}`, obj.id);
     res.status(201).json(obj);
   });
 
