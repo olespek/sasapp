@@ -129,7 +129,7 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
 
         {canEdit && o.geometry.type === 'LineString' && <LineToolsBox source={o} onStartTool={onStartTool} />}
 
-        {!def?.noTracking && (
+        {def?.tracking && (
           <>
             <Field label="Status">
               <div className="status-row">

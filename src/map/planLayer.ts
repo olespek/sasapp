@@ -31,7 +31,7 @@ function escapeHtml(s: string): string {
 }
 
 export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: boolean): L.DivIcon {
-  const tracked = !def.noTracking;
+  const tracked = !!def.tracking;
   const status = o && tracked ? `<span class="pin-status" style="background:${STATUS_COLORS[o.props.status]}"></span>` : '';
   const cls = ['pin', selected ? 'selected' : '', tracked && o?.props.status === 'idea' ? 'faded' : ''].join(' ');
   const hText = def.hasHeight && o ? obstacleHeightText(o.props) : null;
@@ -152,7 +152,7 @@ export class PlanLayer {
       if (editing) marker.on('dragend', () => this.cb.onGeometryChange(o.id, { type: 'Point', coordinates: fromLatLng(marker.getLatLng()) }));
       layer = marker;
     } else {
-      const idea = !def.noTracking && o.props.status === 'idea';
+      const idea = !!def.tracking && o.props.status === 'idea';
       const style: L.PathOptions = {
         color: selected ? SELECT_COLOR : def.color,
         weight: def.kind === 'line' ? (def.weight ?? 4) + (selected ? 2 : 0) : selected ? 3 : 2,
@@ -214,7 +214,7 @@ export class PlanLayer {
       color,
       weight: selected ? 2.5 : 1.5,
       fillColor: def.color,
-      fillOpacity: o.props.status === 'idea' ? 0.3 : 0.65,
+      fillOpacity: 0.65,
       pmIgnore: true,
     } as L.PolylineOptions);
     const rotor = shapes.rotor

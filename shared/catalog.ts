@@ -23,8 +23,8 @@ export interface ObjectTypeDef {
   panelLength?: number;
   /** Objektet har en høyde over bakken (meter), f.eks. hindringer. */
   hasHeight?: boolean;
-  /** Typen trenger ikke oppfølging (status, ansvarlig, leverandør, antall, frist). Notat vises fortsatt. */
-  noTracking?: boolean;
+  /** Typen følges opp med status, ansvarlig, leverandør, antall og frist (utstyr som bestilles og settes ut). */
+  tracking?: boolean;
   /** Utgått type: kan ikke legges til, men eksisterende objekter vises fortsatt. */
   retired?: boolean;
 }
@@ -50,7 +50,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'tribune', label: 'Spottertribune', kind: 'polygon', group: 'publikum', color: '#1f2937', icon: 'camera', fillOpacity: 0.6 },
   { id: 'inngang', label: 'Inngang', kind: 'point', group: 'publikum', color: '#16a34a', icon: 'log-in' },
   { id: 'utgang', label: 'Utgang', kind: 'point', group: 'publikum', color: '#0d9488', icon: 'log-out', retired: true },
-  { id: 'toalett', label: 'Toalett', kind: 'point', group: 'publikum', color: '#0891b2', icon: 'toilet' },
+  { id: 'toalett', label: 'Toalett', kind: 'point', group: 'publikum', color: '#0891b2', icon: 'toilet', tracking: true },
   { id: 'toalettomrade', label: 'Toalettområde', kind: 'polygon', group: 'publikum', color: '#0891b2', icon: 'toilet' },
   { id: 'info', label: 'Informasjon', kind: 'point', group: 'publikum', color: '#2563eb', icon: 'info' },
   { id: 'gangvei', label: 'Gangvei', kind: 'line', group: 'publikum', color: '#64748b', icon: 'footprints', dash: '4 6', retired: true },
@@ -68,32 +68,32 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'nodutgang', label: 'Nødutgang', kind: 'point', group: 'sikkerhet', color: '#15803d', icon: 'door-open' },
   { id: 'romningsvei', label: 'Rømningsvei', kind: 'line', group: 'sikkerhet', color: '#15803d', icon: 'route', dash: '10 6' },
   { id: 'forstehjelp', label: 'Førstehjelp', kind: 'point', group: 'sikkerhet', color: '#dc2626', icon: 'briefcase-medical' },
-  { id: 'brannslukker', label: 'Brannslukker', kind: 'point', group: 'sikkerhet', color: '#b91c1c', icon: 'fire-extinguisher' },
+  { id: 'brannslukker', label: 'Brannslukker', kind: 'point', group: 'sikkerhet', color: '#b91c1c', icon: 'fire-extinguisher', tracking: true },
   { id: 'vakt', label: 'Vaktpost', kind: 'point', group: 'sikkerhet', color: '#f59e0b', icon: 'shield' },
   { id: 'sikkerhetssone', label: 'Sikkerhetssone', kind: 'polygon', group: 'sikkerhet', color: '#ef4444', icon: 'triangle-alert', dash: '8 6' },
   { id: 'samleplass', label: 'Samleplass', kind: 'polygon', group: 'sikkerhet', color: '#22c55e', icon: 'flag' },
   { id: 'utrykningsvei', label: 'Utrykningsvei', kind: 'line', group: 'sikkerhet', color: '#e11d48', icon: 'ambulance', dash: '12 6' },
 
   // Strøm og infrastruktur
-  { id: 'aggregat', label: 'Strømaggregat', kind: 'point', group: 'infrastruktur', color: '#eab308', icon: 'zap' },
-  { id: 'stromskap', label: 'Strømskap/fordeling', kind: 'point', group: 'infrastruktur', color: '#facc15', icon: 'plug-zap' },
+  { id: 'aggregat', label: 'Strømaggregat', kind: 'point', group: 'infrastruktur', color: '#eab308', icon: 'zap', tracking: true },
+  { id: 'stromskap', label: 'Strømskap/fordeling', kind: 'point', group: 'infrastruktur', color: '#facc15', icon: 'plug-zap', tracking: true },
   { id: 'stromkabel', label: 'Strømkabel', kind: 'line', group: 'infrastruktur', color: '#eab308', icon: 'cable', dash: '2 5' },
-  { id: 'vannpost', label: 'Vannpost', kind: 'point', group: 'infrastruktur', color: '#0284c7', icon: 'droplet' },
+  { id: 'vannpost', label: 'Vannpost', kind: 'point', group: 'infrastruktur', color: '#0284c7', icon: 'droplet', tracking: true },
   { id: 'vannledning', label: 'Vannledning', kind: 'line', group: 'infrastruktur', color: '#0284c7', icon: 'waves', dash: '2 5' },
-  { id: 'avfall', label: 'Avfall/container', kind: 'point', group: 'infrastruktur', color: '#78716c', icon: 'trash-2' },
-  { id: 'lys', label: 'Lysmast', kind: 'point', group: 'infrastruktur', color: '#fde047', icon: 'lightbulb' },
+  { id: 'avfall', label: 'Avfall/container', kind: 'point', group: 'infrastruktur', color: '#78716c', icon: 'trash-2', tracking: true },
+  { id: 'lys', label: 'Lysmast', kind: 'point', group: 'infrastruktur', color: '#fde047', icon: 'lightbulb', tracking: true },
 
   // Stander og servering
-  { id: 'expo', label: 'Expo', kind: 'polygon', group: 'kommersielt', color: '#c026d3', icon: 'tag', noTracking: true },
-  { id: 'stand', label: 'Stand', kind: 'polygon', group: 'kommersielt', color: '#a21caf', icon: 'store', noTracking: true },
-  { id: 'mat', label: 'Mat og drikke', kind: 'polygon', group: 'kommersielt', color: '#ea580c', icon: 'utensils', noTracking: true },
-  { id: 'kiosk', label: 'Kiosk/foodtruck', kind: 'point', group: 'kommersielt', color: '#ea580c', icon: 'ice-cream-cone' },
+  { id: 'expo', label: 'Expo', kind: 'polygon', group: 'kommersielt', color: '#c026d3', icon: 'tag' },
+  { id: 'stand', label: 'Stand', kind: 'polygon', group: 'kommersielt', color: '#a21caf', icon: 'store' },
+  { id: 'mat', label: 'Mat og drikke', kind: 'polygon', group: 'kommersielt', color: '#ea580c', icon: 'utensils' },
+  { id: 'kiosk', label: 'Kiosk/foodtruck', kind: 'point', group: 'kommersielt', color: '#ea580c', icon: 'ice-cream-cone', tracking: true },
   { id: 'scene', label: 'Scene', kind: 'polygon', group: 'kommersielt', color: '#7c3aed', icon: 'mic-vocal' },
-  { id: 'hoyttaler', label: 'Høyttaler', kind: 'point', group: 'kommersielt', color: '#7c3aed', icon: 'speaker' },
+  { id: 'hoyttaler', label: 'Høyttaler', kind: 'point', group: 'kommersielt', color: '#7c3aed', icon: 'speaker', tracking: true },
 
   // Logistikk
-  { id: 'parkering', label: 'Bilparkering', kind: 'polygon', group: 'logistikk', color: '#0b5fd6', icon: 'car', noTracking: true },
-  { id: 'hcparkering', label: 'HC-parkering', kind: 'polygon', group: 'logistikk', color: '#1e3a8a', icon: 'accessibility', noTracking: true },
+  { id: 'parkering', label: 'Bilparkering', kind: 'polygon', group: 'logistikk', color: '#0b5fd6', icon: 'car' },
+  { id: 'hcparkering', label: 'HC-parkering', kind: 'polygon', group: 'logistikk', color: '#1e3a8a', icon: 'accessibility' },
   { id: 'lager', label: 'Lager/rigg', kind: 'polygon', group: 'logistikk', color: '#92400e', icon: 'package' },
   { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: 'truck', dash: '14 8', retired: true },
   { id: 'port', label: 'Port/kjøreport', kind: 'point', group: 'logistikk', color: '#334155', icon: 'door-closed' },
@@ -104,12 +104,12 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: 'plane' },
 
   // Operativ (flygingen). Id-en «displayline» er beholdt for #3 slik at linjer tegnet tidligere fortsatt fungerer.
-  { id: 'publikumslinje', label: 'Publikumslinje', kind: 'line', group: 'operativ', color: '#22c5e0', icon: 'users', weight: 4, noTracking: true },
-  { id: 'displayline1', label: 'Display line #1', kind: 'line', group: 'operativ', color: '#eab308', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3, noTracking: true },
-  { id: 'displayline2', label: 'Display line #2', kind: 'line', group: 'operativ', color: '#f97316', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3, noTracking: true },
-  { id: 'displayline', label: 'Display line #3', kind: 'line', group: 'operativ', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3, noTracking: true },
-  { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'operativ', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4', noTracking: true },
-  { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true, noTracking: true },
+  { id: 'publikumslinje', label: 'Publikumslinje', kind: 'line', group: 'operativ', color: '#22c5e0', icon: 'users', weight: 4 },
+  { id: 'displayline1', label: 'Display line #1', kind: 'line', group: 'operativ', color: '#eab308', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'displayline2', label: 'Display line #2', kind: 'line', group: 'operativ', color: '#f97316', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'displayline', label: 'Display line #3', kind: 'line', group: 'operativ', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'operativ', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4' },
+  { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true },
 ];
 
 const BY_ID = new Map(OBJECT_TYPES.map((t) => [t.id, t]));
@@ -120,7 +120,7 @@ export function getObjectType(id: string): ObjectTypeDef | undefined {
 
 /** Om objekter av typen følges opp med status, ansvarlig, frist osv. */
 export function hasTracking(id: string): boolean {
-  return !BY_ID.get(id)?.noTracking;
+  return !!BY_ID.get(id)?.tracking;
 }
 
 /** Typer som kan legges til (utgåtte typer er tatt ut). */
