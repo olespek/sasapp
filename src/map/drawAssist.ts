@@ -37,10 +37,26 @@ export function createDrawAssist(map: L.Map, shape: Shape, opts: DrawAssistOptio
   const draw = () => (map.pm.Draw as unknown as Record<Shape, DrawInternals>)[shape];
   const placed = (): Position[] => ((draw()?._layer?.getLatLngs() as L.LatLng[] | undefined) ?? []).map(toPos);
 
+  let lastClick: L.Point | null = null;
   const constrain = (e: L.LeafletMouseEvent) => {
-    if (!e.originalEvent?.shiftKey) return;
     const pts = placed();
     if (pts.length === 0) return;
+    // Klikk tett ved siste punkt avslutter linjen (Geoman avslutter når punktet er identisk).
+    // Uten dette gir et dobbeltklikk etter et Shift-låst punkt et ekstra, lite linjestykke.
+    if (e.type === 'click') {
+      const here = e.containerPoint;
+      const last = pts[pts.length - 1];
+      const lastLL = L.latLng(last[1], last[0]);
+      const nearVertex = map.latLngToContainerPoint(lastLL).distanceTo(here) < 8;
+      const nearLastClick = lastClick !== null && lastClick.distanceTo(here) < 8;
+      lastClick = here;
+      if (nearVertex || nearLastClick) {
+        const placedLL = (draw()?._layer?.getLatLngs() as L.LatLng[] | undefined) ?? [];
+        e.latlng = placedLL[placedLL.length - 1] ?? lastLL;
+        return;
+      }
+    }
+    if (!e.originalEvent?.shiftKey) return;
     const before = pts.length > 1 ? pts[pts.length - 2] : (opts.before ?? null);
     const c = constrainAngle(before, pts[pts.length - 1], toPos(e.latlng));
     e.latlng = L.latLng(c[1], c[0]);
