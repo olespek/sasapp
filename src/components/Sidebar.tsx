@@ -166,6 +166,7 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
                   {def?.label}
                   {o.props.responsible && ` · ${o.props.responsible}`}
                   {o.props.quantity !== null && ` · ${o.props.quantity} stk`}
+                  {o.props.height != null && ` · ${o.props.height.toLocaleString('nb-NO')} m høy`}
                 </div>
               </div>
               <div className="obj-side">

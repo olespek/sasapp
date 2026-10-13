@@ -58,6 +58,8 @@ export interface ObjectProps {
   quantity: number | null;
   dueDate: string | null; // ÅÅÅÅ-MM-DD
   notes: string;
+  /** For hindringer: høyde over bakken i meter. */
+  height?: number | null;
   /** Kun for fly: id fra flykatalogen. */
   aircraftModel?: string;
   /** Kun for fly: retning nesen peker, i grader (0 = nord, 90 = øst). */

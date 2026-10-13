@@ -33,13 +33,18 @@ function escapeHtml(s: string): string {
 export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: boolean): L.DivIcon {
   const status = o ? `<span class="pin-status" style="background:${STATUS_COLORS[o.props.status]}"></span>` : '';
   const cls = ['pin', selected ? 'selected' : '', o?.props.status === 'idea' ? 'faded' : ''].join(' ');
+  const h = def.hasHeight && o?.props.height != null ? `<span class="pin-height">${formatHeight(o.props.height)}</span>` : '';
   return L.divIcon({
     className: 'pin-wrap',
-    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, 16, 2.25)}${status}</div>`,
+    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, 16, 2.25)}${status}${h}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
     tooltipAnchor: [0, -16],
   });
+}
+
+export function formatHeight(h: number): string {
+  return `${h.toLocaleString('nb-NO', { maximumFractionDigits: 1 })} m`;
 }
 
 function handleIcon(icon: string, cls: string): L.DivIcon {
@@ -116,7 +121,7 @@ export class PlanLayer {
       if (!this.visible(o)) continue;
       seen.add(o.id);
       const selected = o.id === this.selected;
-      const key = JSON.stringify([o.type, o.name, o.geometry, o.props.status, o.props.heading, o.props.aircraftModel, selected, selected && this.editable, this.labels]);
+      const key = JSON.stringify([o.type, o.name, o.geometry, o.props.status, o.props.heading, o.props.aircraftModel, o.props.height, selected, selected && this.editable, this.labels]);
       const existing = this.entries.get(o.id);
       if (existing?.key === key) continue;
       if (existing) this.remove(o.id);
@@ -173,7 +178,8 @@ export class PlanLayer {
 
     const label = o.name || def.label;
     const isArea = def.kind === 'polygon' || def.kind === 'aircraft';
-    (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : `<b>${escapeHtml(label)}</b><br>${escapeHtml(def.label)}`, {
+    const heightText = def.hasHeight && o.props.height != null ? ` · ${formatHeight(o.props.height)} over bakken` : '';
+    (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : `<b>${escapeHtml(label)}</b><br>${escapeHtml(def.label + heightText)}`, {
       permanent: this.labels,
       direction: isArea && this.labels ? 'center' : 'top',
       className: this.labels ? 'map-label' : '',

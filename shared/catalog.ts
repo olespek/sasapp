@@ -21,11 +21,13 @@ export interface ObjectTypeDef {
   weight?: number;
   /** For gjerder: lengden på ett element i meter, brukes til å beregne antall elementer. */
   panelLength?: number;
+  /** Objektet har en høyde over bakken (meter), f.eks. hindringer. */
+  hasHeight?: boolean;
   /** Utgått type: kan ikke legges til, men eksisterende objekter vises fortsatt. */
   retired?: boolean;
 }
 
-export type GroupId = 'publikum' | 'gjerde' | 'fastgjerde' | 'sikkerhet' | 'infrastruktur' | 'kommersielt' | 'logistikk' | 'fly';
+export type GroupId = 'publikum' | 'gjerde' | 'fastgjerde' | 'sikkerhet' | 'infrastruktur' | 'kommersielt' | 'logistikk' | 'fly' | 'operativ';
 
 export const GROUPS: { id: GroupId; label: string }[] = [
   { id: 'publikum', label: 'Publikum' },
@@ -36,6 +38,7 @@ export const GROUPS: { id: GroupId; label: string }[] = [
   { id: 'kommersielt', label: 'Stander og servering' },
   { id: 'logistikk', label: 'Logistikk' },
   { id: 'fly', label: 'Fly' },
+  { id: 'operativ', label: 'Operativ' },
 ];
 
 export const OBJECT_TYPES: ObjectTypeDef[] = [
@@ -96,9 +99,14 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
 
   // Fly
   { id: 'fly', label: 'Fly (static display)', kind: 'aircraft', group: 'fly', color: '#1e3a8a', icon: 'plane' },
-  { id: 'displayline', label: 'Display line', kind: 'line', group: 'fly', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
-  { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'fly', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4' },
   { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: 'plane' },
+
+  // Operativ (flygingen). Id-en «displayline» er beholdt for #3 slik at linjer tegnet tidligere fortsatt fungerer.
+  { id: 'displayline1', label: 'Display line #1', kind: 'line', group: 'operativ', color: '#eab308', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'displayline2', label: 'Display line #2', kind: 'line', group: 'operativ', color: '#f97316', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'displayline', label: 'Display line #3', kind: 'line', group: 'operativ', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
+  { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'operativ', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4' },
+  { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true },
 ];
 
 const BY_ID = new Map(OBJECT_TYPES.map((t) => [t.id, t]));

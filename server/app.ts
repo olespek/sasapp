@@ -215,7 +215,7 @@ export function createApp(db: DB, opts: AppOptions = {}) {
       type: def.id,
       name: v.name(req.body?.name),
       geometry: v.geometry(req.body?.geometry, v.expectedGeometryType(def.id)),
-      props: v.props(req.body?.props, undefined, isAircraft),
+      props: v.props(req.body?.props, undefined, def),
       createdBy: who(req),
       updatedBy: who(req),
       createdAt: now,
@@ -243,7 +243,7 @@ export function createApp(db: DB, opts: AppOptions = {}) {
     const isAircraft = getObjectType(updated.type)?.kind === 'aircraft';
     if (body.name !== undefined) updated.name = v.name(body.name);
     if (body.geometry !== undefined) updated.geometry = v.geometry(body.geometry, v.expectedGeometryType(updated.type));
-    if (body.props !== undefined) updated.props = v.props(body.props, existing.props, isAircraft);
+    if (body.props !== undefined) updated.props = v.props(body.props, existing.props, getObjectType(updated.type));
     // Ny flymodell: bytt navnet også, med mindre det er satt til noe eget (f.eks. registrering).
     if (isAircraft && body.name === undefined && updated.props.aircraftModel !== existing.props.aircraftModel) {
       const oldModelName = getAircraft(existing.props.aircraftModel)?.name ?? '';

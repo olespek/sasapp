@@ -62,6 +62,12 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
           </Field>
         )}
 
+        {def?.hasHeight && (
+          <Field label="Høyde over bakken (meter)">
+            <NumberInput value={o.props.height ?? null} disabled={!canEdit} onCommit={(height) => setProps({ height })} />
+          </Field>
+        )}
+
         {def?.kind === 'aircraft' && (
           <>
             <Field label="Flytype">

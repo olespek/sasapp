@@ -70,7 +70,8 @@ export function expectedGeometryType(typeId: string): Geometry['type'] {
 }
 
 /** Slår sammen eksisterende egenskaper med en (delvis) oppdatering og validerer resultatet. */
-export function props(input: unknown, base: ObjectProps = defaultProps(), isAircraft = false): ObjectProps {
+export function props(input: unknown, base: ObjectProps = defaultProps(), def?: { kind: string; hasHeight?: boolean }): ObjectProps {
+  const isAircraft = def?.kind === 'aircraft';
   if (input !== undefined && (typeof input !== 'object' || input === null || Array.isArray(input))) fail('Ugyldige egenskaper');
   const p = (input ?? {}) as Record<string, unknown>;
   const out: ObjectProps = { ...base };
@@ -92,6 +93,16 @@ export function props(input: unknown, base: ObjectProps = defaultProps(), isAirc
     if (d === null || d === '') out.dueDate = null;
     else if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))) out.dueDate = d;
     else fail('Frist må være en dato (ÅÅÅÅ-MM-DD)');
+  }
+  if (def?.hasHeight) {
+    if ('height' in p) {
+      const h = p.height;
+      if (h === null || h === '') out.height = null;
+      else if (typeof h === 'number' && Number.isFinite(h) && h >= 0 && h <= 2000) out.height = Math.round(h * 10) / 10;
+      else fail('Høyde må være et tall mellom 0 og 2000 meter');
+    }
+  } else {
+    delete out.height;
   }
   if (isAircraft) {
     if ('aircraftModel' in p) {

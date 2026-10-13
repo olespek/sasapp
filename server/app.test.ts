@@ -77,6 +77,24 @@ describe('objekter og rettigheter', () => {
     await a.patch('/api/objects/gammel').set(H).send({ type: 'gangvei' }).expect(400);
   });
 
+  it('hindring har høyde over bakken, andre punkter ikke', async () => {
+    const a = await login('red');
+    const geometry = { type: 'Point', coordinates: [5.644, 58.887] };
+    const o = (await a.post('/api/objects').set(H).send({ type: 'obstacle', name: 'Radarmast', geometry, props: { height: 42.5 } }).expect(201)).body;
+    expect(o.props.height).toBe(42.5);
+    await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { height: -3 } }).expect(400);
+    const cleared = (await a.patch(`/api/objects/${o.id}`).set(H).send({ props: { height: null } }).expect(200)).body;
+    expect(cleared.props.height).toBeNull();
+    const t = (await a.post('/api/objects').set(H).send({ type: 'toalett', geometry, props: { height: 10 } }).expect(201)).body;
+    expect(t.props.height).toBeUndefined();
+  });
+
+  it('display line #1–#3 og flyparkering ligger under Operativ', async () => {
+    const { getObjectType } = await import('../shared/catalog.js');
+    for (const id of ['displayline1', 'displayline2', 'displayline', 'flyparkering', 'obstacle']) expect(getObjectType(id)?.group).toBe('operativ');
+    expect(getObjectType('displayline')?.label).toBe('Display line #3');
+  });
+
   it('avviser feil geometritype', async () => {
     const a = await login('red');
     await a.post('/api/objects').set(H).send({ type: 'toalett', geometry: polygon }).expect(400);
