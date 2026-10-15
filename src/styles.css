@@ -1045,6 +1045,13 @@ table.summary .sub {
   font-family: 'Poppins', system-ui, sans-serif;
 }
 
+/* Ingen fokusramme rundt områder, linjer og markører når man klikker på dem i kartet. */
+.leaflet-container .leaflet-interactive:focus,
+.leaflet-container .leaflet-marker-icon:focus,
+.leaflet-container path:focus {
+  outline: none;
+}
+
 .leaflet-bar,
 .leaflet-control-layers {
   border: none !important;
