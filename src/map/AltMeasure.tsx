@@ -1,5 +1,6 @@
 // Avstand i Figma-stil: hold Alt/Option for å se korteste avstand med en rød linje og etikett.
-// - Med et objekt valgt: fra det valgte objektet til objektet nærmest musepekeren.
+// - Med et objekt valgt: fra punktet under musepekeren på objektet man peker på, til nærmeste
+//   punkt på det valgte objektet. Målestreken følger altså musen langs objektet.
 // - Uten valgt objekt (eller mens man tegner): fra musepekeren til nærmeste objekt.
 
 import { useEffect, useRef, useState } from 'react';
@@ -90,17 +91,12 @@ export function AltMeasure({ objects, selectedId, drawing }: Props) {
       }
     }
     if (!target) return;
-    let result = closestBetween(selected ? shapeOf(selected) : [cursor], shapeOf(target));
+    // Målingen følger musepekeren: fra punktet på målet der musen peker, til nærmeste punkt på
+    // det valgte objektet (eller til musepekeren selv når ingenting er valgt).
+    const onTarget = closestBetween([cursor], shapeOf(target));
+    if (!onTarget) return;
+    const result = selected ? closestBetween([onTarget.to], shapeOf(selected)) : onTarget;
     if (!result) return;
-    // Ved parallelle kanter er mange punktpar like nære. Velg da paret ved musepekeren,
-    // slik at målestreken følger pekeren langs kanten, som i Figma.
-    if (selected) {
-      const fromNearCursor = closestBetween([cursor], shapeOf(selected));
-      const pair = fromNearCursor && closestBetween([fromNearCursor.to], shapeOf(target));
-      if (pair && pair.distance <= result.distance + Math.max(0.05, result.distance * 0.005)) {
-        result = { from: fromNearCursor!.to, to: pair.to, distance: pair.distance };
-      }
-    }
 
     // Marker målet.
     const ts = shapeOf(target);
