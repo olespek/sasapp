@@ -98,6 +98,17 @@ export const AIRCRAFT: AircraftSpec[] = [
     ],
   },
   {
+    id: 'c130j30',
+    name: 'Lockheed Martin C-130J-30 Hercules',
+    category: 'Transportfly',
+    length: 34.69,
+    span: 40.41,
+    height: 11.84,
+    // Omrisset er sporet fra tegning, se aircraftOutlines.ts.
+    stations: [],
+    surfaces: [],
+  },
+  {
     id: 'p8a',
     name: 'Boeing P-8A Poseidon',
     category: 'Maritimt patruljefly',
