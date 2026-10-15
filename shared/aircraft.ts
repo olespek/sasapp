@@ -729,10 +729,41 @@ export const AIRCRAFT: AircraftSpec[] = [
       { le: 7.6, root: 1.0, tip: 1.0, halfSpan: 2.2, sweep: 0 },
     ],
   },
+  // Småfly (omrissene er sporet fra tegning, se aircraftOutlines.ts)
+  {
+    id: 'pa18',
+    name: 'Piper PA-18 Super Cub',
+    category: 'Småfly',
+    length: 6.88,
+    span: 10.73,
+    height: 2.02,
+    stations: [],
+    surfaces: [],
+  },
+  {
+    id: 'c152',
+    name: 'Cessna 152',
+    category: 'Småfly',
+    length: 7.34,
+    span: 10.11,
+    height: 2.59,
+    stations: [],
+    surfaces: [],
+  },
+  {
+    id: 'c172',
+    name: 'Cessna 172 Skyhawk',
+    category: 'Småfly',
+    length: 8.28,
+    span: 11.0,
+    height: 2.72,
+    stations: [],
+    surfaces: [],
+  },
 ];
 
 /** Rekkefølgen kategoriene vises i. */
-export const AIRCRAFT_CATEGORIES = ['Jagerfly', 'Transportfly', 'Tankfly', 'Overvåkingsfly', 'Maritimt patruljefly', 'Bombefly', 'Helikopter', 'Skolefly', 'Veteranfly'];
+export const AIRCRAFT_CATEGORIES = ['Jagerfly', 'Transportfly', 'Tankfly', 'Overvåkingsfly', 'Maritimt patruljefly', 'Bombefly', 'Helikopter', 'Skolefly', 'Småfly', 'Veteranfly'];
 
 /** Flytypene gruppert etter kategori, i visningsrekkefølge. */
 export function aircraftByCategory(): { category: string; aircraft: AircraftSpec[] }[] {

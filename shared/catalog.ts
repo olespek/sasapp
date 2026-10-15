@@ -101,7 +101,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
 
   // Fly
   { id: 'fly', label: 'Fly (static display)', kind: 'aircraft', group: 'fly', color: '#1e3a8a', icon: 'plane' },
-  { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: 'plane' },
+  { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: 'plane', retired: true },
 
   // Operativ (flygingen). Id-en «displayline» er beholdt for #3 slik at linjer tegnet tidligere fortsatt fungerer.
   { id: 'publikumslinje', label: 'Publikumslinje', kind: 'line', group: 'operativ', color: '#22c5e0', icon: 'users', weight: 4 },
