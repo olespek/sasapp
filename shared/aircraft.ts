@@ -577,7 +577,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     length: 12.67,
     span: 12.19,
     height: 4.62,
-    // Forenklet: halebommene er slått sammen til ett smalt skrog.
+    // Brukes ikke: omrisset er sporet fra tegning (med åpning mellom halebommene), se aircraftOutlines.ts.
     stations: [[0, 0], [1, 0.5], [3, 0.65], [6, 0.6], [6.5, 0.3], [12.67, 0.3]],
     surfaces: [
       { le: 3.6, root: 2.1, tip: 2.1, halfSpan: 6.095, sweep: 0 },
