@@ -141,7 +141,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     height: 4.6,
     stations: [[0, 0], [0.8, 0.8], [2, 1.4], [5.5, 1.4], [6.5, 0.4], [12.5, 0.25], [12.92, 0.25]],
     surfaces: [{ le: 9.4, root: 0.8, tip: 0.6, halfSpan: 1.45, sweep: 0.1 }],
-    rotors: [{ s: 3.9, diameter: 14.02 }],
+    rotors: [{ s: 4.1, diameter: 14.02 }],
   },
   {
     id: 'spitfire',
@@ -439,7 +439,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     height: 5.18,
     stations: [[0, 0], [0.8, 0.9], [2, 1.2], [6.5, 1.2], [7.5, 0.45], [14, 0.3], [15.26, 0.3]],
     surfaces: [{ le: 13.4, root: 0.9, tip: 0.8, halfSpan: 2.2, sweep: 0 }],
-    rotors: [{ s: 4.4, diameter: 16.36 }],
+    rotors: [{ s: 5.1, diameter: 16.36 }],
   },
   {
     id: 'uh1h',
@@ -450,7 +450,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     height: 4.39,
     stations: [[0, 0], [0.8, 0.8], [2, 1.3], [5.2, 1.3], [6.2, 0.4], [12, 0.25], [12.77, 0.25]],
     surfaces: [{ le: 9.4, root: 0.7, tip: 0.6, halfSpan: 1.4, sweep: 0 }],
-    rotors: [{ s: 3.0, diameter: 14.63 }],
+    rotors: [{ s: 3.9, diameter: 14.63 }],
   },
   // Veteranfly
   {

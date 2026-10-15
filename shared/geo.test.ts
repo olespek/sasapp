@@ -30,7 +30,8 @@ describe('flysiluetter', () => {
     const length = Math.max(...ys) - Math.min(...ys);
     expect(width).toBeGreaterThan(spec.span * 0.93);
     expect(width).toBeLessThan(spec.span * 1.07);
-    expect(length).toBeGreaterThan(spec.length * 0.9);
+    // Totallengden for helikopter inkluderer halerotoren, som ikke tegnes.
+    expect(length).toBeGreaterThan(spec.length * (spec.rotors ? 0.8 : 0.9));
     expect(length).toBeLessThan(spec.length * 1.1);
   });
 
