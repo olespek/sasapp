@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, AIRCRAFT_CATEGORIES, aircraftShapes } from './aircraft.js';
-import { OUTLINES } from './aircraftOutlines.js';
+import { FULL_OUTLINES, OUTLINES } from './aircraftOutlines.js';
 import { getObjectType, panelCount } from './catalog.js';
 import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea } from './geo.js';
 import type { Position } from './types.js';
@@ -51,6 +51,16 @@ describe('flysiluetter', () => {
       // For helikopter er omrisset bare skroget; totallengden inkluderer rotorene.
       if (spec!.rotors) expect(tail).toBeLessThanOrEqual(spec!.length);
       else expect(tail).toBeCloseTo(spec!.length, 1);
+    }
+  });
+
+  it('hele omriss hører til en flytype og går fra nese til hale', () => {
+    for (const [id, pts] of Object.entries(FULL_OUTLINES)) {
+      const spec = AIRCRAFT.find((a) => a.id === id);
+      expect(spec, id).toBeDefined();
+      expect(OUTLINES[id], id).toBeUndefined();
+      expect(Math.min(...pts.map(([, s]) => s))).toBeCloseTo(0, 1);
+      expect(Math.max(...pts.map(([, s]) => s))).toBeLessThanOrEqual(spec!.length);
     }
   });
 

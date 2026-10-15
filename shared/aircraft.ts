@@ -7,7 +7,7 @@
 // tegnes rotordisken i tillegg, siden den bestemmer hvor mye plass flyet trenger.
 
 import { offset } from './geo.js';
-import { OUTLINES } from './aircraftOutlines.js';
+import { FULL_OUTLINES, OUTLINES } from './aircraftOutlines.js';
 import type { Position } from './types.js';
 
 /** Trapesformet flate (vinge/haleplan), speilet på begge sider. */
@@ -39,6 +39,8 @@ export interface AircraftSpec {
   surfaces: Surface[];
   /** Nøyaktig omriss sporet fra tegning (høyre halvdel). Brukes i stedet for stations og surfaces. */
   outline?: [number, number][];
+  /** Hele omrisset (ikke speilet) for fly som ikke er symmetriske, f.eks. NH90 med stabilisator på én side. */
+  fullOutline?: [number, number][];
   /** Rotordisker (to for tandemrotor som Chinook). */
   rotors?: { s: number; diameter: number }[];
 }
@@ -130,7 +132,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     height: 5.23,
     stations: [[0, 0], [0.8, 0.9], [2, 1.6], [8.5, 1.7], [9.5, 0.5], [15.5, 0.35], [16.13, 0.3]],
     surfaces: [{ le: 13.6, root: 1.0, tip: 0.8, halfSpan: 1.6, sweep: 0.2 }],
-    rotors: [{ s: 5.45, diameter: 16.3 }],
+    rotors: [{ s: 5.5, diameter: 16.3 }],
   },
   {
     id: 'bell412',
@@ -770,7 +772,10 @@ export function aircraftByCategory(): { category: string; aircraft: AircraftSpec
   return AIRCRAFT_CATEGORIES.map((category) => ({ category, aircraft: AIRCRAFT.filter((a) => a.category === category) })).filter((g) => g.aircraft.length > 0);
 }
 
-for (const a of AIRCRAFT) if (OUTLINES[a.id]) a.outline = OUTLINES[a.id];
+for (const a of AIRCRAFT) {
+  if (OUTLINES[a.id]) a.outline = OUTLINES[a.id];
+  if (FULL_OUTLINES[a.id]) a.fullOutline = FULL_OUTLINES[a.id];
+}
 
 const BY_ID = new Map(AIRCRAFT.map((a) => [a.id, a]));
 
@@ -780,7 +785,8 @@ export function getAircraft(id: string | undefined): AircraftSpec | undefined {
 
 /** Skrogets lengde (uten rotor). Midtpunktet til flyet ligger midt på denne. */
 export function bodyLength(spec: AircraftSpec): number {
-  if (spec.outline) return Math.max(...spec.outline.map(([, s]) => s));
+  const traced = spec.fullOutline ?? spec.outline;
+  if (traced) return Math.max(...traced.map(([, s]) => s));
   return spec.stations[spec.stations.length - 1][0];
 }
 
@@ -854,13 +860,17 @@ export interface AircraftShapes {
 }
 
 export function aircraftShapes(spec: AircraftSpec, center: Position, heading: number): AircraftShapes {
-  const half = halfOutline(spec);
-  const mirrored = half
-    .slice()
-    .reverse()
-    .filter(([w]) => w > 0)
-    .map(([w, s]) => [-w, s] as [number, number]);
-  const outline = [...half.filter(([w], i) => w > 0 || i === 0 || i === half.length - 1), ...mirrored];
+  let outline: [number, number][];
+  if (spec.fullOutline) outline = spec.fullOutline;
+  else {
+    const half = halfOutline(spec);
+    const mirrored = half
+      .slice()
+      .reverse()
+      .filter(([w]) => w > 0)
+      .map(([w, s]) => [-w, s] as [number, number]);
+    outline = [...half.filter(([w], i) => w > 0 || i === 0 || i === half.length - 1), ...mirrored];
+  }
   const mid = bodyLength(spec) / 2;
   const shapes: AircraftShapes = {
     body: place(outline, center, heading, mid),
