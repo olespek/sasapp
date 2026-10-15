@@ -652,6 +652,71 @@ export const AIRCRAFT: AircraftSpec[] = [
       { le: 6.0, root: 0.75, tip: 0.5, halfSpan: 1.5, sweep: 0.15 },
     ],
   },
+  {
+    id: 'f5a',
+    name: 'Northrop F-5A Freedom Fighter',
+    category: 'Veteranfly',
+    length: 14.38,
+    span: 7.7,
+    height: 4.01,
+    stations: [[0, 0], [2, 0.35], [4, 0.55], [6.5, 0.75], [7.2, 0.9], [12.5, 0.85], [14.38, 0.45]],
+    surfaces: [
+      { le: 7.2, root: 3.4, tip: 0.7, halfSpan: 3.85, sweep: 1.9 },
+      { le: 12.0, root: 2.0, tip: 0.8, halfSpan: 2.0, sweep: 1.2 },
+    ],
+  },
+  {
+    id: 'yak50',
+    name: 'Yakovlev Yak-50',
+    category: 'Veteranfly',
+    length: 7.68,
+    span: 9.5,
+    height: 3.16,
+    stations: [[0, 0], [0.3, 0.55], [1.2, 0.6], [3, 0.5], [6.8, 0.2], [7.68, 0.1]],
+    surfaces: [
+      { le: 1.4, root: 2.0, tip: 1.2, halfSpan: 4.75, sweep: 0.3 },
+      { le: 6.75, root: 0.85, tip: 0.55, halfSpan: 1.6, sweep: 0.2 },
+    ],
+  },
+  {
+    id: 'yak52',
+    name: 'Yakovlev Yak-52',
+    category: 'Skolefly',
+    length: 7.745,
+    span: 9.3,
+    height: 2.7,
+    stations: [[0, 0], [0.3, 0.5], [1.2, 0.55], [3.2, 0.5], [6.8, 0.2], [7.745, 0.1]],
+    surfaces: [
+      { le: 1.6, root: 1.9, tip: 1.2, halfSpan: 4.65, sweep: 0.3 },
+      { le: 6.85, root: 0.85, tip: 0.55, halfSpan: 1.6, sweep: 0.2 },
+    ],
+  },
+  {
+    id: 'safir',
+    name: 'Saab 91 Safir',
+    category: 'Skolefly',
+    length: 7.95,
+    span: 10.6,
+    height: 2.2,
+    stations: [[0, 0], [0.3, 0.45], [1.3, 0.55], [3.2, 0.5], [7, 0.2], [7.95, 0.1]],
+    surfaces: [
+      { le: 1.7, root: 1.8, tip: 1.0, halfSpan: 5.3, sweep: 0.4 },
+      { le: 7.0, root: 0.9, tip: 0.5, halfSpan: 1.6, sweep: 0.2 },
+    ],
+  },
+  {
+    id: 'broussard',
+    name: 'Max Holste MH.1521 Broussard',
+    category: 'Veteranfly',
+    length: 8.65,
+    span: 13.75,
+    height: 2.79,
+    stations: [[0, 0], [0.3, 0.6], [1.5, 0.7], [3.5, 0.65], [7.5, 0.25], [8.65, 0.15]],
+    surfaces: [
+      { le: 1.8, root: 2.1, tip: 1.4, halfSpan: 6.875, sweep: 0.3 },
+      { le: 7.6, root: 1.0, tip: 1.0, halfSpan: 2.2, sweep: 0 },
+    ],
+  },
 ];
 
 /** Rekkefølgen kategoriene vises i. */
