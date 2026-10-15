@@ -1263,6 +1263,15 @@ table.summary .sub {
   padding: 2px 10px;
 }
 
+.palette-sub-head {
+  padding: 10px 10px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
 .draw-hint {
   position: absolute;
   left: 50%;

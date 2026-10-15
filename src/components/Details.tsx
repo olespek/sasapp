@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
+import { aircraftByCategory, getAircraft } from '../../shared/aircraft';
 import { ACTIVE_TYPES, getObjectType, panelCount } from '../../shared/catalog';
 import { formatArea, formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObject } from '../../shared/types';
@@ -82,10 +82,14 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
           <>
             <Field label="Flytype">
               <select value={o.props.aircraftModel} disabled={!canEdit} onChange={(e) => setProps({ aircraftModel: e.target.value })}>
-                {AIRCRAFT.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
+                {aircraftByCategory().map((g) => (
+                  <optgroup key={g.category} label={g.category}>
+                    {g.aircraft.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </Field>
@@ -106,7 +110,7 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
             </Field>
             {spec && (
               <div className="measure">
-                {spec.category} · lengde {spec.length} m · {spec.rotor ? 'rotor' : 'spenn'} {spec.span} m · høyde {spec.height} m
+                {spec.category} · lengde {spec.length} m · {spec.rotors ? 'rotor' : 'spenn'} {spec.span} m · høyde {spec.height} m
               </div>
             )}
           </>

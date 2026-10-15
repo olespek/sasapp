@@ -217,17 +217,17 @@ export class PlanLayer {
       fillOpacity: 0.65,
       pmIgnore: true,
     } as L.PolylineOptions);
-    const rotor = shapes.rotor
-      ? L.polygon(shapes.rotor.map(toLatLng), { color, weight: 1, dashArray: '4 4', fillOpacity: 0.06, pmIgnore: true } as L.PolylineOptions)
-      : null;
-    if (rotor) group.addLayer(rotor);
+    const rotors = (shapes.rotors ?? []).map((r) =>
+      L.polygon(r.map(toLatLng), { color, weight: 1, dashArray: '4 4', fillOpacity: 0.06, pmIgnore: true } as L.PolylineOptions),
+    );
+    for (const r of rotors) group.addLayer(r);
     group.addLayer(body);
 
     if (editing) {
       const redraw = () => {
         shapes = aircraftShapes(spec, center, heading);
         body.setLatLngs(shapes.body.map(toLatLng));
-        rotor?.setLatLngs(shapes.rotor!.map(toLatLng));
+        rotors.forEach((r, i) => r.setLatLngs(shapes.rotors![i].map(toLatLng)));
       };
       const move = L.marker(toLatLng(center), { icon: handleIcon('move', 'move'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
       const rotate = L.marker(toLatLng(shapes.nose), { icon: handleIcon('rotate-cw', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);

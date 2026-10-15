@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { AIRCRAFT } from '../../shared/aircraft';
+import { aircraftByCategory } from '../../shared/aircraft';
 import { ACTIVE_TYPES, GROUPS, type ObjectTypeDef } from '../../shared/catalog';
 import { Icon } from '../icons';
 
@@ -56,17 +56,22 @@ export function Palette({ open, setOpen, active, onPick }: Props) {
                     t.kind === 'aircraft' ? (
                       <div key={t.id} className="palette-sub">
                         <div className="muted small">Fly i målestokk</div>
-                        {AIRCRAFT.map((a) => (
+                        {aircraftByCategory().map((g) => (
+                          <div key={g.category} className="palette-sub-group">
+                            <div className="palette-sub-head">{g.category}</div>
+                            {g.aircraft.map((a) => (
                           <button
                             key={a.id}
                             className={`palette-item ${active?.type === t.id && active.model === a.id ? 'active' : ''}`}
                             onClick={() => onPick(t.id, a.id)}
-                            title={`${a.name} – ${a.length} m lang, ${a.span} m ${a.rotor ? 'rotordiameter' : 'vingespenn'}`}
+                            title={`${a.name} – ${a.length} m lang, ${a.span} m ${a.rotors ? 'rotordiameter' : 'vingespenn'}`}
                           >
                             <TypeSwatch def={t} />
                             <span className="grow">{a.name}</span>
-                            <span className="muted small">{a.category}</span>
+                            <span className="muted small">{a.length.toLocaleString('nb-NO')} m</span>
                           </button>
+                            ))}
+                          </div>
                         ))}
                       </div>
                     ) : (
