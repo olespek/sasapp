@@ -5,6 +5,7 @@ import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
 import type { Geometry, Plan, PlanObject } from '../../shared/types';
 import { createDrawAssist, type DrawAssist } from './drawAssist';
+import { createRectDrag, type RectDrag } from './rectDrag';
 import { AltMeasure } from './AltMeasure';
 import { LineTools, type LineTool } from './LineTools';
 import { MeasureControl } from './MeasureControl';
@@ -200,6 +201,7 @@ function Controller(props: Props) {
     };
     map.on('pm:create', onCreate as L.LeafletEventHandlerFn);
     let assist: DrawAssist | null = null;
+    let rect: RectDrag | null = null;
     if (def.kind === 'point') {
       map.pm.enableDraw('Marker', { markerStyle: { icon: pinIcon(def, null, false) }, continueDrawing: false });
     } else {
@@ -213,11 +215,13 @@ function Controller(props: Props) {
         allowSelfIntersection: true,
       });
       assist.start();
+      if (shape === 'Polygon') rect = createRectDrag(map, def.color, (geometry) => cbRef.current.onCreated(type, geometry));
     }
     return () => {
       map.off('pm:create', onCreate as L.LeafletEventHandlerFn);
       map.pm.disableDraw();
       assist?.stop();
+      rect?.stop();
       document.removeEventListener('keydown', onKey);
     };
   }, [map, props.drawType]);

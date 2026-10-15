@@ -542,7 +542,7 @@ function DrawHint({ type, onCancel }: { type: string; onCancel: () => void }) {
         ? 'Klikk i kartet der flyet skal stå. Du kan rotere det etterpå.'
         : def.kind === 'line'
           ? 'Klikk for hvert knekkpunkt. Shift: 45°/90°. Alt/Option: avstand. Backspace: angre punkt. Dobbeltklikk for å avslutte.'
-          : 'Klikk for hvert hjørne. Shift: 45°/90°. Alt/Option: avstand. Backspace: angre punkt. Klikk på første punkt for å avslutte.';
+          : 'Klikk og dra for et rettvinklet område (Shift: kvadrat), eller klikk for hvert hjørne. Shift: 45°/90°. Alt/Option: avstand. Backspace: angre punkt. Klikk på første punkt for å avslutte.';
   return (
     <div className="draw-hint">
       <b>{def.label}:</b> {text}
