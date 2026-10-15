@@ -7,6 +7,7 @@
 // tegnes rotordisken i tillegg, siden den bestemmer hvor mye plass flyet trenger.
 
 import { offset } from './geo.js';
+import { OUTLINES } from './aircraftOutlines.js';
 import type { Position } from './types.js';
 
 /** Trapesformet flate (vinge/haleplan), speilet på begge sider. */
@@ -36,6 +37,8 @@ export interface AircraftSpec {
   height: number;
   stations: [number, number][];
   surfaces: Surface[];
+  /** Nøyaktig omriss sporet fra tegning (høyre halvdel). Brukes i stedet for stations og surfaces. */
+  outline?: [number, number][];
   /** Rotordisker (to for tandemrotor som Chinook). */
   rotors?: { s: number; diameter: number }[];
 }
@@ -149,11 +152,9 @@ export const AIRCRAFT: AircraftSpec[] = [
     length: 19.66,
     span: 28.96,
     height: 5.16,
-    stations: [[0, 0], [0.6, 0.7], [2, 1.2], [4, 1.35], [12, 1.3], [17, 0.6], [19.66, 0.2]],
-    surfaces: [
-      { le: 6.0, root: 4.4, tip: 1.7, halfSpan: 14.48, sweep: 2.1 },
-      { le: 16.6, root: 2.4, tip: 1.0, halfSpan: 4.3, sweep: 1.0 },
-    ],
+    // Omrisset er sporet fra tegning, se aircraftOutlines.ts.
+    stations: [],
+    surfaces: [],
   },
   {
     id: 'saab105',
@@ -727,6 +728,8 @@ export function aircraftByCategory(): { category: string; aircraft: AircraftSpec
   return AIRCRAFT_CATEGORIES.map((category) => ({ category, aircraft: AIRCRAFT.filter((a) => a.category === category) })).filter((g) => g.aircraft.length > 0);
 }
 
+for (const a of AIRCRAFT) if (OUTLINES[a.id]) a.outline = OUTLINES[a.id];
+
 const BY_ID = new Map(AIRCRAFT.map((a) => [a.id, a]));
 
 export function getAircraft(id: string | undefined): AircraftSpec | undefined {
@@ -735,6 +738,7 @@ export function getAircraft(id: string | undefined): AircraftSpec | undefined {
 
 /** Skrogets lengde (uten rotor). Midtpunktet til flyet ligger midt på denne. */
 export function bodyLength(spec: AircraftSpec): number {
+  if (spec.outline) return Math.max(...spec.outline.map(([, s]) => s));
   return spec.stations[spec.stations.length - 1][0];
 }
 
@@ -770,6 +774,7 @@ function surfacePoints(stations: [number, number][], surf: Surface): { le: numbe
 
 /** Høyre halvdel av omrisset, fra nesen til halen, som [w, s]. */
 export function halfOutline(spec: AircraftSpec): [number, number][] {
+  if (spec.outline) return spec.outline;
   const surfaces = spec.surfaces.map((s) => surfacePoints(spec.stations, s)).sort((a, b) => a.le - b.le);
   const out: [number, number][] = [];
   let si = 0;
