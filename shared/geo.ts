@@ -268,3 +268,100 @@ export function closestBetween(a: Position[], b: Position[]): Closest | null {
   for (const p of b) consider(p, a, true);
   return best;
 }
+
+export interface OrientedBox {
+  /** Midten av rektangelet. */
+  center: Position;
+  /** Kompassretning (0–180) for den lange siden. */
+  angle: number;
+  length: number;
+  width: number;
+}
+
+function hull(pts: { x: number; y: number }[]): { x: number; y: number }[] {
+  const p = [...pts].sort((a, b) => a.x - b.x || a.y - b.y);
+  if (p.length < 3) return p;
+  const cross = (o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: typeof p = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+    lower.push(q);
+  }
+  const upper: typeof p = [];
+  for (const q of [...p].reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+/**
+ * Minste rektangel som omslutter et område, i områdets egen retning. Gir lengde og bredde
+ * også for roterte områder; for rektangler er det nøyaktig sidelengdene.
+ */
+export function orientedBox(g: Geometry): OrientedBox | null {
+  if (g.type !== 'Polygon') return null;
+  const ring = g.coordinates[0].slice(0, -1);
+  if (ring.length < 3) return null;
+  const origin = shapeCenter(g);
+  const local = ring.map((p) => {
+    const l = toLocal(origin, p);
+    return { x: l.east, y: l.north };
+  });
+  const h = hull(local);
+  let best: { area: number; ux: number; uy: number; min: number[]; max: number[] } | null = null;
+  for (let i = 0; i < h.length; i++) {
+    const a = h[i];
+    const b = h[(i + 1) % h.length];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-9) continue;
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    const min = [Infinity, Infinity];
+    const max = [-Infinity, -Infinity];
+    for (const q of h) {
+      const u = q.x * ux + q.y * uy;
+      const v = -q.x * uy + q.y * ux;
+      min[0] = Math.min(min[0], u);
+      max[0] = Math.max(max[0], u);
+      min[1] = Math.min(min[1], v);
+      max[1] = Math.max(max[1], v);
+    }
+    const area = (max[0] - min[0]) * (max[1] - min[1]);
+    if (!best || area < best.area - 1e-9) best = { area, ux, uy, min, max };
+  }
+  if (!best) return null;
+  let { ux, uy } = best;
+  let du = best.max[0] - best.min[0];
+  let dv = best.max[1] - best.min[1];
+  const cu = (best.max[0] + best.min[0]) / 2;
+  const cv = (best.max[1] + best.min[1]) / 2;
+  const cx = cu * ux - cv * uy;
+  const cy = cu * uy + cv * ux;
+  if (dv > du) {
+    [du, dv] = [dv, du];
+    [ux, uy] = [-uy, ux];
+  }
+  const angle = normalizeHeading((Math.atan2(ux, uy) / RAD) % 180);
+  return { center: offset(origin, cx, cy), angle: angle >= 180 ? angle - 180 : angle, length: du, width: dv };
+}
+
+/** Skalerer et område langs sin egen lengde- og breddeakse til nye mål (meter), med samme midtpunkt. */
+export function resizePolygon(g: Geometry, length: number, width: number): Geometry {
+  const box = orientedBox(g);
+  if (!box || g.type !== 'Polygon' || box.length <= 0 || box.width <= 0) return g;
+  const a = box.angle * RAD;
+  const ax = Math.sin(a); // lengdeaksen (øst, nord)
+  const ay = Math.cos(a);
+  const sl = length / box.length;
+  const sw = width / box.width;
+  const round = (n: number) => Math.round(n * 1e7) / 1e7;
+  const tf = (p: Position): Position => {
+    const l = toLocal(box.center, p);
+    const u = l.east * ax + l.north * ay;
+    const v = -l.east * ay + l.north * ax;
+    const q = offset(box.center, u * sl * ax - v * sw * ay, u * sl * ay + v * sw * ax);
+    return [round(q[0]), round(q[1])];
+  };
+  return { type: 'Polygon', coordinates: g.coordinates.map((ring) => ring.map(tf)) };
+}

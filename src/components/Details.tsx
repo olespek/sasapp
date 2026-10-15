@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { aircraftByCategory, getAircraft } from '../../shared/aircraft';
 import { ACTIVE_TYPES, getObjectType, panelCount } from '../../shared/catalog';
-import { formatArea, formatLength, measure } from '../../shared/geo';
+import { formatArea, formatLength, measure, orientedBox, resizePolygon } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObject } from '../../shared/types';
 import type { api } from '../api';
 import { TypeSwatch } from './Palette';
@@ -27,6 +27,12 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
   const sameKind = ACTIVE_TYPES.filter((t) => t.kind === def?.kind || t.id === o.type);
   if (def?.retired && !sameKind.includes(def)) sameKind.unshift(def);
   const panels = def?.kind === 'line' ? panelCount(def, m.length ?? 0) : null;
+  const box = o.geometry.type === 'Polygon' ? orientedBox(o.geometry) : null;
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const setSize = (length: number, width: number) => {
+    if (!box || length <= 0 || width <= 0) return;
+    onUpdate(o.id, { geometry: resizePolygon(o.geometry, length, width) });
+  };
 
   return (
     <aside className="details card">
@@ -128,6 +134,17 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
                 {panels !== null && ` · ca. ${panels} elementer à ${String(def!.panelLength).replace('.', ',')} m`}
               </>
             )}
+          </div>
+        )}
+
+        {box && (
+          <div className="grid2">
+            <Field label="Lengde (m)">
+              <NumberInput value={round1(box.length)} disabled={!canEdit} onCommit={(v) => v !== null && setSize(v, box.width)} />
+            </Field>
+            <Field label="Bredde (m)">
+              <NumberInput value={round1(box.width)} disabled={!canEdit} onCommit={(v) => v !== null && setSize(box.length, v)} />
+            </Field>
           </div>
         )}
 

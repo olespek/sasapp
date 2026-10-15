@@ -58,7 +58,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   // Gjerde (midlertidige gjerder som settes opp til showet). Id-en «gjerde» er beholdt for høyt gjerde
   // slik at gjerder tegnet før inndelingen fortsatt fungerer.
   { id: 'gjerde', label: 'Høyt gjerde (2000×3500)', kind: 'line', group: 'gjerde', color: '#111827', icon: 'fence', weight: 5, panelLength: 3.5 },
-  { id: 'gjerde_lavt', label: 'Lavt gjerde (2000×1100)', kind: 'line', group: 'gjerde', color: '#64748b', icon: 'fence', weight: 4, panelLength: 2 },
+  { id: 'gjerde_lavt', label: 'Lavt gjerde (3000×1100)', kind: 'line', group: 'gjerde', color: '#64748b', icon: 'fence', weight: 4, panelLength: 3 },
 
   // Fast gjerde (områdegjerder som står der i dag)
   { id: 'fastgjerde', label: 'Fast gjerde', kind: 'line', group: 'fastgjerde', color: '#a16207', icon: 'brick-wall', dash: '2 6', weight: 5 },
@@ -96,6 +96,8 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'hcparkering', label: 'HC-parkering', kind: 'polygon', group: 'logistikk', color: '#1e3a8a', icon: 'accessibility' },
   { id: 'lager', label: 'Lager/rigg', kind: 'polygon', group: 'logistikk', color: '#92400e', icon: 'package' },
   { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: 'truck', dash: '14 8', retired: true },
+  { id: 'bussholdeplass', label: 'Bussholdeplass', kind: 'point', group: 'logistikk', color: '#0f766e', icon: 'bus' },
+  { id: 'bussvei', label: 'Bussvei', kind: 'line', group: 'logistikk', color: '#0f766e', icon: 'bus-front', dash: '14 6', weight: 5 },
   { id: 'port', label: 'Port/kjøreport', kind: 'point', group: 'logistikk', color: '#334155', icon: 'door-closed' },
   { id: 'telt', label: 'Telt', kind: 'polygon', group: 'logistikk', color: '#b45309', icon: 'tent' },
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, AIRCRAFT_CATEGORIES, aircraftShapes } from './aircraft.js';
 import { FULL_OUTLINES, OUTLINES } from './aircraftOutlines.js';
 import { getObjectType, panelCount } from './catalog.js';
-import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea, shapeCenter, transformGeometry } from './geo.js';
+import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, orientedBox, polygonArea, resizePolygon, shapeCenter, transformGeometry } from './geo.js';
 import type { Position } from './types.js';
 
 const SOLA: Position = [5.6442, 58.8873];
@@ -75,7 +75,8 @@ describe('gjerdeelementer', () => {
   it('runder opp til hele elementer', () => {
     expect(panelCount(getObjectType('gjerde'), 35)).toBe(10);
     expect(panelCount(getObjectType('gjerde'), 35.1)).toBe(11);
-    expect(panelCount(getObjectType('gjerde_lavt'), 9)).toBe(5);
+    expect(panelCount(getObjectType('gjerde_lavt'), 9)).toBe(3);
+    expect(panelCount(getObjectType('gjerde_lavt'), 10)).toBe(4);
     expect(panelCount(getObjectType('fastgjerde'), 100)).toBeNull();
   });
 });
@@ -189,5 +190,31 @@ describe('flytte og rotere ferdige objekter', () => {
     expect(distance(ring[0], ring[1])).toBeCloseTo(20, 1);
     expect(bearing(ring[0], ring[1])).toBeCloseTo(180, 0);
     expect(distance(c, shapeCenter(rotated))).toBeLessThan(0.01);
+  });
+});
+
+describe('lengde og bredde på områder', () => {
+  const rect = (len: number, wid: number, angle: number) => {
+    const c = shapeCenter({ type: 'Polygon', coordinates: [[SOLA, SOLA, SOLA, SOLA]] });
+    const sq: Position[] = [offset(SOLA, -len / 2, -wid / 2), offset(SOLA, len / 2, -wid / 2), offset(SOLA, len / 2, wid / 2), offset(SOLA, -len / 2, wid / 2)];
+    return transformGeometry({ type: 'Polygon', coordinates: [[...sq, sq[0]]] }, c, angle);
+  };
+
+  it('finner lengde og bredde også når området er rotert', () => {
+    for (const angle of [0, 30, 75, 120]) {
+      const box = orientedBox(rect(80, 25, angle))!;
+      expect(box.length).toBeCloseTo(80, 1);
+      expect(box.width).toBeCloseTo(25, 1);
+    }
+  });
+
+  it('endrer lengde og bredde uten å flytte eller rotere området', () => {
+    const g = rect(80, 25, 35);
+    const before = orientedBox(g)!;
+    const after = orientedBox(resizePolygon(g, 100, 10))!;
+    expect(after.length).toBeCloseTo(100, 1);
+    expect(after.width).toBeCloseTo(10, 1);
+    expect(after.angle).toBeCloseTo(before.angle, 1);
+    expect(distance(after.center, before.center)).toBeLessThan(0.05);
   });
 });

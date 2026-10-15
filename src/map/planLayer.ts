@@ -4,9 +4,10 @@
 import L from 'leaflet';
 import { aircraftShapes, getAircraft } from '../../shared/aircraft';
 import { getObjectType, type ObjectTypeDef } from '../../shared/catalog';
-import { bearing, constrainAngle, normalizeHeading, shapeCenter, toLocal, transformGeometry } from '../../shared/geo';
+import { bearing, constrainAngle, distance, normalizeHeading, shapeCenter, toLocal, transformGeometry } from '../../shared/geo';
 import { STATUS_COLORS, obstacleHeightText, type Geometry, type PlanObject, type Position } from '../../shared/types';
 import { iconSvg } from '../icons';
+import { LABEL_ANCHOR, formatDistance } from './MeasureControl';
 
 export interface PlanLayerCallbacks {
   onSelect(id: string | null): void;
@@ -16,7 +17,7 @@ export interface PlanLayerCallbacks {
 interface Entry {
   key: string;
   layer: L.Layer;
-  handles: L.Marker[];
+  handles: L.Layer[];
 }
 
 /** Fremhevingsfarge for valgt objekt (samme røde som knappene). */
@@ -163,7 +164,7 @@ export class PlanLayer {
     const def = getObjectType(o.type);
     if (!def) return;
     const editing = selected && this.editable;
-    const handles: L.Marker[] = [];
+    const handles: L.Layer[] = [];
     let layer: L.Layer;
 
     if (def.kind === 'aircraft' && o.geometry.type === 'Point') {
@@ -215,10 +216,25 @@ export class PlanLayer {
     });
 
     this.group.addLayer(layer);
+    // Sidelengder på valgt område, som når man tegner.
+    let sides: L.LayerGroup | null = null;
+    if (selected && o.geometry.type === 'Polygon') {
+      sides = L.layerGroup().addTo(this.map);
+      drawSideLabels(sides, o.geometry.coordinates[0]);
+      handles.push(sides);
+    }
     if (editing && (def.kind === 'line' || def.kind === 'polygon')) {
       (layer as L.Polyline).pm.enable({ allowSelfIntersection: true, draggable: true, snappable: true });
       lockAngleOnVertexDrag(this.map, layer as L.Polyline, def.kind === 'polygon');
-      this.moveRotateHandles(o, layer as L.Polyline, handles);
+      this.moveRotateHandles(o, layer as L.Polyline, handles, sides);
+      if (sides) {
+        const s = sides;
+        (layer as L.Polyline).on('pm:edit pm:markerdrag', () => {
+          const lls = (layer as L.Polygon).getLatLngs()[0] as L.LatLng[];
+          const ring = lls.map((ll) => [ll.lng, ll.lat] as Position);
+          drawSideLabels(s, [...ring, ring[0]]);
+        });
+      }
     }
     if (selected && 'bringToFront' in layer) (layer as L.Path).bringToFront();
     this.entries.set(o.id, { key, layer, handles });
@@ -228,7 +244,7 @@ export class PlanLayer {
    * Håndtak for å flytte og rotere en ferdig linje eller et område som helhet.
    * Midten flytter, det røde håndtaket over roterer rundt midten (Shift låser til 15°).
    */
-  private moveRotateHandles(o: PlanObject, path: L.Polyline, handles: L.Marker[]): void {
+  private moveRotateHandles(o: PlanObject, path: L.Polyline, handles: L.Layer[], sides: L.LayerGroup | null): void {
     const original = o.geometry;
     const center = shapeCenter(original);
     let moved: Position = center;
@@ -237,7 +253,10 @@ export class PlanLayer {
     const draw = (g: Geometry) => {
       current = g;
       if (g.type === 'LineString') path.setLatLngs(g.coordinates.map(toLatLng));
-      else if (g.type === 'Polygon') path.setLatLngs(g.coordinates.map((ring) => ring.slice(0, -1).map(toLatLng)));
+      else if (g.type === 'Polygon') {
+        path.setLatLngs(g.coordinates.map((ring) => ring.slice(0, -1).map(toLatLng)));
+        if (sides) drawSideLabels(sides, g.coordinates[0]);
+      }
     };
     // Rotasjonshåndtaket står en fast skjermavstand fra midten, i retningen objektet er rotert,
     // slik at det er like lett å nå uansett form og zoom.
@@ -287,7 +306,7 @@ export class PlanLayer {
     handles.push(move, rotate);
   }
 
-  private aircraftLayer(o: PlanObject, def: ObjectTypeDef, selected: boolean, editing: boolean, handles: L.Marker[]): L.Layer {
+  private aircraftLayer(o: PlanObject, def: ObjectTypeDef, selected: boolean, editing: boolean, handles: L.Layer[]): L.Layer {
     const spec = getAircraft(o.props.aircraftModel);
     let center = (o.geometry as { coordinates: Position }).coordinates;
     let heading = o.props.heading ?? 0;
@@ -341,6 +360,23 @@ export class PlanLayer {
       handles.push(move, rotate);
     }
     return group;
+  }
+}
+
+/** Lengde på hver side av et område, midt på siden. Korte sider (under 1 m) hoppes over. */
+function drawSideLabels(group: L.LayerGroup, ring: Position[]): void {
+  group.clearLayers();
+  for (let i = 1; i < ring.length; i++) {
+    const a = ring[i - 1];
+    const b = ring[i];
+    const d = distance(a, b);
+    if (d < 1) continue;
+    group.addLayer(
+      L.marker(toLatLng([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]), { icon: LABEL_ANCHOR, interactive: false, keyboard: false, pmIgnore: true } as L.MarkerOptions).bindTooltip(
+        formatDistance(d),
+        { permanent: true, direction: 'center', className: 'measure-label' },
+      ),
+    );
   }
 }
 
