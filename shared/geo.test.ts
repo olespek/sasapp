@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, AIRCRAFT_CATEGORIES, aircraftShapes } from './aircraft.js';
 import { FULL_OUTLINES, OUTLINES } from './aircraftOutlines.js';
 import { getObjectType, panelCount } from './catalog.js';
-import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea } from './geo.js';
+import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea, shapeCenter, transformGeometry } from './geo.js';
 import type { Position } from './types.js';
 
 const SOLA: Position = [5.6442, 58.8873];
@@ -166,5 +166,28 @@ describe('korteste avstand mellom objekter', () => {
 
   it('punkt til punkt', () => {
     expect(closestBetween([SOLA], [offset(SOLA, 30, 40)])!.distance).toBeCloseTo(50, 1);
+  });
+});
+
+describe('flytte og rotere ferdige objekter', () => {
+  const sq: Position[] = [offset(SOLA, -10, -5), offset(SOLA, 10, -5), offset(SOLA, 10, 5), offset(SOLA, -10, 5)];
+  const poly = { type: 'Polygon' as const, coordinates: [[...sq, sq[0]]] };
+
+  it('flytter uten å endre form', () => {
+    const c = shapeCenter(poly);
+    const moved = transformGeometry(poly, c, 0, 30, -20);
+    const ring = (moved as typeof poly).coordinates[0];
+    expect(distance(ring[0], ring[1])).toBeCloseTo(20, 1);
+    expect(distance(c, shapeCenter(moved))).toBeCloseTo(Math.hypot(30, 20), 1);
+  });
+
+  it('roterer rundt midten med klokka', () => {
+    const c = shapeCenter(poly);
+    const rotated = transformGeometry(poly, c, 90) as typeof poly;
+    const ring = rotated.coordinates[0];
+    // Den lange siden (20 m) peker nå nord–sør, og midtpunktet står stille.
+    expect(distance(ring[0], ring[1])).toBeCloseTo(20, 1);
+    expect(bearing(ring[0], ring[1])).toBeCloseTo(180, 0);
+    expect(distance(c, shapeCenter(rotated))).toBeLessThan(0.01);
   });
 });

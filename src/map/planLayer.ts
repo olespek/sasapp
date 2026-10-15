@@ -4,7 +4,7 @@
 import L from 'leaflet';
 import { aircraftShapes, getAircraft } from '../../shared/aircraft';
 import { getObjectType, type ObjectTypeDef } from '../../shared/catalog';
-import { bearing, constrainAngle, normalizeHeading } from '../../shared/geo';
+import { bearing, constrainAngle, distance, normalizeHeading, offset, shapeCenter, toLocal, transformGeometry } from '../../shared/geo';
 import { STATUS_COLORS, obstacleHeightText, type Geometry, type PlanObject, type Position } from '../../shared/types';
 import { iconSvg } from '../icons';
 
@@ -43,6 +43,27 @@ export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: bool
     iconAnchor: [15, 15],
     tooltipAnchor: [0, -16],
   });
+}
+
+// Leaflet starter ikke draging når Shift er nede ved museklikk. For våre håndtak skal Shift
+// kunne holdes inne fra starten (vinkellås), så vi skjuler Shift for selve dra-starten.
+type DraggableProto = { _onDown(this: { _element?: HTMLElement }, e: MouseEvent): void };
+const draggableProto = (L as unknown as { Draggable: { prototype: DraggableProto } }).Draggable.prototype;
+const originalOnDown = draggableProto._onDown;
+draggableProto._onDown = function (e) {
+  if (e.shiftKey && this._element?.querySelector?.('.handle')) {
+    e = new Proxy(e, {
+      get: (t, k) => (k === 'shiftKey' ? false : typeof (t as never)[k] === 'function' ? ((t as never)[k] as Function).bind(t) : (t as never)[k]),
+    });
+  }
+  return originalOnDown.call(this, e);
+};
+
+/** Hindrer at museklikk på et håndtak når kartet (Shift + dra ville ellers startet zoomvinduet). */
+function isolate(marker: L.Marker): L.Marker {
+  const el = marker.getElement();
+  if (el) L.DomEvent.on(el, 'mousedown touchstart', L.DomEvent.stopPropagation);
+  return marker;
 }
 
 function handleIcon(icon: string, cls: string): L.DivIcon {
@@ -194,9 +215,65 @@ export class PlanLayer {
     if (editing && (def.kind === 'line' || def.kind === 'polygon')) {
       (layer as L.Polyline).pm.enable({ allowSelfIntersection: true, draggable: true, snappable: true });
       lockAngleOnVertexDrag(this.map, layer as L.Polyline, def.kind === 'polygon');
+      this.moveRotateHandles(o, layer as L.Polyline, handles);
     }
     if (selected && 'bringToFront' in layer) (layer as L.Path).bringToFront();
     this.entries.set(o.id, { key, layer, handles });
+  }
+
+  /**
+   * Håndtak for å flytte og rotere en ferdig linje eller et område som helhet.
+   * Midten flytter, det røde håndtaket over roterer rundt midten (Shift låser til 15°).
+   */
+  private moveRotateHandles(o: PlanObject, path: L.Polyline, handles: L.Marker[]): void {
+    const original = o.geometry;
+    const center = shapeCenter(original);
+    const pts = original.type === 'LineString' ? original.coordinates : original.type === 'Polygon' ? original.coordinates[0] : [];
+    const radius = Math.max(4, ...pts.map((p) => distance(center, p))) * 1.15;
+    let moved: Position = center;
+    let angle = 0;
+    let current = original;
+    const draw = (g: Geometry) => {
+      current = g;
+      if (g.type === 'LineString') path.setLatLngs(g.coordinates.map(toLatLng));
+      else if (g.type === 'Polygon') path.setLatLngs(g.coordinates.map((ring) => ring.slice(0, -1).map(toLatLng)));
+    };
+    const rotatePos = () => offset(moved, radius * Math.sin((angle * Math.PI) / 180), radius * Math.cos((angle * Math.PI) / 180));
+    const update = () => {
+      const d = toLocal(center, moved); // forskyvning i meter fra opprinnelig midtpunkt
+      draw(transformGeometry(original, center, angle, d.east, d.north));
+    };
+    const move = L.marker(toLatLng(center), { icon: handleIcon('move', 'move'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
+    const rotate = L.marker(toLatLng(rotatePos()), { icon: handleIcon('rotate-cw', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
+    move.bindTooltip('Dra for å flytte hele');
+    rotate.bindTooltip('Dra for å rotere (Shift: 15°)');
+    const begin = () => {
+      const pm = (path as L.Polyline & { pm?: { enabled(): boolean; disable(): void } }).pm;
+      if (pm?.enabled()) pm.disable(); // knekkpunkthåndtakene følger ikke med under flytting
+    };
+    move.on('dragstart', begin);
+    rotate.on('dragstart', begin);
+    move.on('drag', () => {
+      moved = fromLatLng(move.getLatLng());
+      update();
+      rotate.setLatLng(toLatLng(rotatePos()));
+    });
+    rotate.on('drag', (e) => {
+      let a = bearing(moved, fromLatLng(rotate.getLatLng()));
+      if ((e as L.LeafletMouseEvent & { originalEvent?: MouseEvent }).originalEvent?.shiftKey) a = Math.round(a / 15) * 15;
+      angle = Math.round(normalizeHeading(a) * 10) / 10;
+      update();
+      rotate.setTooltipContent(`${Math.round(angle > 180 ? angle - 360 : angle)}°`);
+      rotate.openTooltip();
+    });
+    const emit = () => {
+      if (current !== original) this.cb.onGeometryChange(o.id, current);
+    };
+    move.on('dragend', emit);
+    rotate.on('dragend', emit);
+    isolate(move.addTo(this.map));
+    isolate(rotate.addTo(this.map));
+    handles.push(move, rotate);
   }
 
   private aircraftLayer(o: PlanObject, def: ObjectTypeDef, selected: boolean, editing: boolean, handles: L.Marker[]): L.Layer {
@@ -248,8 +325,8 @@ export class PlanLayer {
       };
       move.on('dragend', emit);
       rotate.on('dragend', emit);
-      move.addTo(this.map);
-      rotate.addTo(this.map);
+      isolate(move.addTo(this.map));
+      isolate(rotate.addTo(this.map));
       handles.push(move, rotate);
     }
     return group;

@@ -65,6 +65,33 @@ export function toLocal(origin: Position, p: Position): { east: number; north: n
   };
 }
 
+/** Midtpunkt (snitt av knekkpunktene) for en linje eller et område. */
+export function shapeCenter(g: Geometry): Position {
+  const pts = g.type === 'Point' ? [g.coordinates] : g.type === 'LineString' ? g.coordinates : g.coordinates[0].slice(0, -1);
+  const sum = pts.reduce((acc, p) => [acc[0] + p[0], acc[1] + p[1]], [0, 0]);
+  return [sum[0] / pts.length, sum[1] / pts.length];
+}
+
+/**
+ * Roterer en geometri rundt origin (grader med klokka) og flytter den et antall meter øst/nord.
+ * Brukes for å flytte og rotere ferdige linjer og områder.
+ */
+export function transformGeometry(g: Geometry, origin: Position, angle: number, east = 0, north = 0): Geometry {
+  const a = angle * RAD;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const target = offset(origin, east, north);
+  const tf = (p: Position): Position => {
+    const l = toLocal(origin, p);
+    const round = (n: number) => Math.round(n * 1e7) / 1e7;
+    const q = offset(target, l.east * cos + l.north * sin, -l.east * sin + l.north * cos);
+    return [round(q[0]), round(q[1])];
+  };
+  if (g.type === 'Point') return { type: 'Point', coordinates: tf(g.coordinates) };
+  if (g.type === 'LineString') return { type: 'LineString', coordinates: g.coordinates.map(tf) };
+  return { type: 'Polygon', coordinates: g.coordinates.map((ring) => ring.map(tf)) };
+}
+
 /** Kompassretning (0–360, 0 = nord) fra a til b. */
 export function bearing(a: Position, b: Position): number {
   const { east, north } = toLocal(a, b);
