@@ -363,17 +363,27 @@ export class PlanLayer {
   }
 }
 
-/** Lengde på hver side av et område, midt på siden. Korte sider (under 1 m) hoppes over. */
+/**
+ * Lengde på hver side av et område, midt på siden. Korte sider (under 1 m) hoppes over, og en side
+ * som er parallell med og like lang som en side som allerede vises (motstående side i et rektangel),
+ * vises ikke på nytt.
+ */
 function drawSideLabels(group: L.LayerGroup, ring: Position[]): void {
   group.clearLayers();
+  const shown: { text: string; dir: number }[] = [];
   for (let i = 1; i < ring.length; i++) {
     const a = ring[i - 1];
     const b = ring[i];
     const d = distance(a, b);
     if (d < 1) continue;
+    const text = formatDistance(d);
+    const dir = bearing(a, b) % 180;
+    const parallel = (x: number) => Math.min(Math.abs(x - dir), 180 - Math.abs(x - dir)) < 2;
+    if (shown.some((s) => s.text === text && parallel(s.dir))) continue;
+    shown.push({ text, dir });
     group.addLayer(
       L.marker(toLatLng([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]), { icon: LABEL_ANCHOR, interactive: false, keyboard: false, pmIgnore: true } as L.MarkerOptions).bindTooltip(
-        formatDistance(d),
+        text,
         { permanent: true, direction: 'center', className: 'measure-label' },
       ),
     );
