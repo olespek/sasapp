@@ -283,7 +283,7 @@ function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: stri
 
       {aircraft.length > 0 && (
         <>
-          <h4>Fly på static display</h4>
+          <h4>Fly</h4>
           <table className="summary">
             <tbody>
               {aircraft.map(({ a, n }) => (

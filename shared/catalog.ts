@@ -100,7 +100,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'telt', label: 'Telt', kind: 'polygon', group: 'logistikk', color: '#b45309', icon: 'tent' },
 
   // Fly
-  { id: 'fly', label: 'Fly (static display)', kind: 'aircraft', group: 'fly', color: '#1e3a8a', icon: 'plane' },
+  { id: 'fly', label: 'Fly', kind: 'aircraft', group: 'fly', color: '#1e3a8a', icon: 'plane' },
   { id: 'displayomrade', label: 'Static display-område', kind: 'polygon', group: 'fly', color: '#1e40af', icon: 'plane', retired: true },
 
   // Operativ (flygingen). Id-en «displayline» er beholdt for #3 slik at linjer tegnet tidligere fortsatt fungerer.

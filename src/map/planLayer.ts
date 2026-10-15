@@ -199,8 +199,11 @@ export class PlanLayer {
     const label = o.name || def.label;
     const isArea = def.kind === 'polygon' || def.kind === 'aircraft';
     const hText = def.hasHeight ? obstacleHeightText(o.props) : null;
-    const heightText = hText ? ` · ${hText}` : '';
-    (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : `<b>${escapeHtml(label)}</b><br>${escapeHtml(def.label + heightText)}`, {
+    // Navn på første linje og type under. Har objektet ikke eget navn, vises typen bare én gang.
+    const ownName = o.name && o.name !== def.label;
+    const second = ownName ? def.label + (hText ? ` · ${hText}` : '') : hText;
+    const hover = `<b>${escapeHtml(label)}</b>${second ? `<br>${escapeHtml(second)}` : ''}`;
+    (layer as L.Path).bindTooltip(this.labels ? escapeHtml(label) : hover, {
       permanent: this.labels,
       direction: isArea && this.labels ? 'center' : 'top',
       className: this.labels ? 'map-label' : '',

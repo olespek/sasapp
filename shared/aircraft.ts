@@ -1,4 +1,4 @@
-// Flykatalog for static display med forenklede siluetter i riktig målestokk.
+// Flykatalog med siluetter i riktig målestokk.
 //
 // Hver siluett beskrives i et lokalt koordinatsystem der s er avstanden bakover
 // fra nesen og w er avstanden ut fra senterlinjen, begge i meter. Skroget er en
