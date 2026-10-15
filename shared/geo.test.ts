@@ -40,15 +40,17 @@ describe('flysiluetter', () => {
     expect(new Set(AIRCRAFT.map((a) => a.id)).size).toBe(AIRCRAFT.length);
   });
 
-  it('sporede omriss hører til en flytype og går fra nese til hale', () => {
+  it('sporede omriss hører til en flytype og starter og slutter på midtlinjen', () => {
     for (const [id, pts] of Object.entries(OUTLINES)) {
       const spec = AIRCRAFT.find((a) => a.id === id);
       expect(spec, id).toBeDefined();
       expect(pts[0]).toEqual([0, 0]);
       expect(pts[pts.length - 1][0]).toBe(0);
+      // Omriss med åpning mot midtlinjen (Vampire) ender ved åpningen, ikke ved halen.
+      const tail = Math.max(...pts.map(([, s]) => s));
       // For helikopter er omrisset bare skroget; totallengden inkluderer rotorene.
-      if (spec!.rotors) expect(pts[pts.length - 1][1]).toBeLessThanOrEqual(spec!.length);
-      else expect(pts[pts.length - 1][1]).toBeCloseTo(spec!.length, 1);
+      if (spec!.rotors) expect(tail).toBeLessThanOrEqual(spec!.length);
+      else expect(tail).toBeCloseTo(spec!.length, 1);
     }
   });
 
