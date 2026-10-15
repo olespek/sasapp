@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, AIRCRAFT_CATEGORIES, aircraftShapes } from './aircraft.js';
+import { OUTLINES } from './aircraftOutlines.js';
 import { getObjectType, panelCount } from './catalog.js';
 import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, polygonArea } from './geo.js';
 import type { Position } from './types.js';
@@ -36,6 +37,16 @@ describe('flysiluetter', () => {
   it('alle kategorier er med i rekkefølgen', () => {
     for (const a of AIRCRAFT) expect(AIRCRAFT_CATEGORIES).toContain(a.category);
     expect(new Set(AIRCRAFT.map((a) => a.id)).size).toBe(AIRCRAFT.length);
+  });
+
+  it('sporede omriss hører til en flytype og går fra nese til hale', () => {
+    for (const [id, pts] of Object.entries(OUTLINES)) {
+      const spec = AIRCRAFT.find((a) => a.id === id);
+      expect(spec, id).toBeDefined();
+      expect(pts[0]).toEqual([0, 0]);
+      expect(pts[pts.length - 1][0]).toBe(0);
+      expect(pts[pts.length - 1][1]).toBeCloseTo(spec!.length, 1);
+    }
   });
 
   it('roterer med kursen', () => {
