@@ -4,7 +4,7 @@
 import L from 'leaflet';
 import { aircraftShapes, getAircraft } from '../../shared/aircraft';
 import { getObjectType, type ObjectTypeDef } from '../../shared/catalog';
-import { bearing, constrainAngle, distance, normalizeHeading, offset, shapeCenter, toLocal, transformGeometry } from '../../shared/geo';
+import { bearing, constrainAngle, normalizeHeading, shapeCenter, toLocal, transformGeometry } from '../../shared/geo';
 import { STATUS_COLORS, obstacleHeightText, type Geometry, type PlanObject, type Position } from '../../shared/types';
 import { iconSvg } from '../icons';
 
@@ -228,8 +228,6 @@ export class PlanLayer {
   private moveRotateHandles(o: PlanObject, path: L.Polyline, handles: L.Marker[]): void {
     const original = o.geometry;
     const center = shapeCenter(original);
-    const pts = original.type === 'LineString' ? original.coordinates : original.type === 'Polygon' ? original.coordinates[0] : [];
-    const radius = Math.max(4, ...pts.map((p) => distance(center, p))) * 1.15;
     let moved: Position = center;
     let angle = 0;
     let current = original;
@@ -238,13 +236,20 @@ export class PlanLayer {
       if (g.type === 'LineString') path.setLatLngs(g.coordinates.map(toLatLng));
       else if (g.type === 'Polygon') path.setLatLngs(g.coordinates.map((ring) => ring.slice(0, -1).map(toLatLng)));
     };
-    const rotatePos = () => offset(moved, radius * Math.sin((angle * Math.PI) / 180), radius * Math.cos((angle * Math.PI) / 180));
+    // Rotasjonshåndtaket står en fast skjermavstand fra midten, i retningen objektet er rotert,
+    // slik at det er like lett å nå uansett form og zoom.
+    const HANDLE_PX = 56;
+    const rotatePos = (): L.LatLngExpression => {
+      const c = this.map.latLngToLayerPoint(toLatLng(moved));
+      const a = (angle * Math.PI) / 180;
+      return this.map.layerPointToLatLng(L.point(c.x + HANDLE_PX * Math.sin(a), c.y - HANDLE_PX * Math.cos(a)));
+    };
     const update = () => {
       const d = toLocal(center, moved); // forskyvning i meter fra opprinnelig midtpunkt
       draw(transformGeometry(original, center, angle, d.east, d.north));
     };
     const move = L.marker(toLatLng(center), { icon: handleIcon('move', 'move'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
-    const rotate = L.marker(toLatLng(rotatePos()), { icon: handleIcon('rotate-cw', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
+    const rotate = L.marker(rotatePos(), { icon: handleIcon('rotate-cw', 'rotate'), draggable: true, pmIgnore: true, zIndexOffset: 1000 } as L.MarkerOptions);
     move.bindTooltip('Dra for å flytte hele');
     rotate.bindTooltip('Dra for å rotere (Shift: 15°)');
     const begin = () => {
@@ -256,7 +261,7 @@ export class PlanLayer {
     move.on('drag', () => {
       moved = fromLatLng(move.getLatLng());
       update();
-      rotate.setLatLng(toLatLng(rotatePos()));
+      rotate.setLatLng(rotatePos());
     });
     rotate.on('drag', (e) => {
       let a = bearing(moved, fromLatLng(rotate.getLatLng()));
@@ -273,6 +278,9 @@ export class PlanLayer {
     rotate.on('dragend', emit);
     isolate(move.addTo(this.map));
     isolate(rotate.addTo(this.map));
+    const keepDistance = () => rotate.setLatLng(rotatePos());
+    this.map.on('zoomend', keepDistance);
+    rotate.on('remove', () => this.map.off('zoomend', keepDistance));
     handles.push(move, rotate);
   }
 
