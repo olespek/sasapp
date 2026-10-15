@@ -135,6 +135,18 @@ export const AIRCRAFT: AircraftSpec[] = [
     rotors: [{ s: 5.5, diameter: 16.3 }],
   },
   {
+    id: 'aw101',
+    name: 'AgustaWestland AW101',
+    category: 'Helikopter',
+    length: 22.81,
+    span: 18.59,
+    height: 6.65,
+    // Omrisset (med stabilisator på styrbord side) er sporet fra tegning, se aircraftOutlines.ts.
+    stations: [],
+    surfaces: [],
+    rotors: [{ s: 6.8, diameter: 18.59 }],
+  },
+  {
     id: 'bell412',
     name: 'Bell 412',
     category: 'Helikopter',
