@@ -130,7 +130,7 @@ export const AIRCRAFT: AircraftSpec[] = [
     height: 5.23,
     stations: [[0, 0], [0.8, 0.9], [2, 1.6], [8.5, 1.7], [9.5, 0.5], [15.5, 0.35], [16.13, 0.3]],
     surfaces: [{ le: 13.6, root: 1.0, tip: 0.8, halfSpan: 1.6, sweep: 0.2 }],
-    rotors: [{ s: 5.6, diameter: 16.3 }],
+    rotors: [{ s: 5.45, diameter: 16.3 }],
   },
   {
     id: 'bell412',

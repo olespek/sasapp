@@ -45,7 +45,9 @@ describe('flysiluetter', () => {
       expect(spec, id).toBeDefined();
       expect(pts[0]).toEqual([0, 0]);
       expect(pts[pts.length - 1][0]).toBe(0);
-      expect(pts[pts.length - 1][1]).toBeCloseTo(spec!.length, 1);
+      // For helikopter er omrisset bare skroget; totallengden inkluderer rotorene.
+      if (spec!.rotors) expect(pts[pts.length - 1][1]).toBeLessThanOrEqual(spec!.length);
+      else expect(pts[pts.length - 1][1]).toBeCloseTo(spec!.length, 1);
     }
   });
 
