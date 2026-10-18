@@ -25,6 +25,8 @@ export interface ObjectTypeDef {
   hasHeight?: boolean;
   /** Typen følges opp med status, ansvarlig, leverandør, antall og frist (utstyr som bestilles og settes ut). */
   tracking?: boolean;
+  /** Linjen vises med piler i tegneretningen (f.eks. taxi flow). */
+  arrows?: boolean;
   /** Utgått type: kan ikke legges til, men eksisterende objekter vises fortsatt. */
   retired?: boolean;
 }
@@ -89,6 +91,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'mat', label: 'Mat og drikke', kind: 'polygon', group: 'kommersielt', color: '#ea580c', icon: 'utensils' },
   { id: 'kiosk', label: 'Kiosk/foodtruck', kind: 'point', group: 'kommersielt', color: '#ea580c', icon: 'ice-cream-cone', tracking: true },
   { id: 'scene', label: 'Scene', kind: 'polygon', group: 'kommersielt', color: '#7c3aed', icon: 'mic-vocal' },
+  { id: 'speakerbu', label: 'Speakerbu', kind: 'polygon', group: 'kommersielt', color: '#7c3aed', icon: 'mic' },
   { id: 'hoyttaler', label: 'Høyttaler', kind: 'point', group: 'kommersielt', color: '#7c3aed', icon: 'speaker', tracking: true },
 
   // Logistikk
@@ -112,6 +115,9 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'displayline', label: 'Display line #3', kind: 'line', group: 'operativ', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
   { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'operativ', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4' },
   { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true },
+  { id: 'displaysenter', label: 'Displaysenter', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'monitor' },
+  { id: 'taxiflow', label: 'Taxi flow', kind: 'line', group: 'operativ', color: '#65a30d', icon: 'arrow-right', dash: '10 8', weight: 4, arrows: true },
+  { id: 'noentry', label: 'No Entry', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'circle-minus' },
 ];
 
 const BY_ID = new Map(OBJECT_TYPES.map((t) => [t.id, t]));

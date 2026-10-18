@@ -1637,3 +1637,12 @@ table.summary .sub {
 .presence-tag span {
   transform: translate(-50%, -50%);
 }
+
+/* Retningspiler på taxi flow. */
+.flow-arrow {
+  pointer-events: none;
+}
+
+.flow-arrow svg {
+  display: block;
+}

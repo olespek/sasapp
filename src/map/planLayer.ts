@@ -216,6 +216,17 @@ export class PlanLayer {
     });
 
     this.group.addLayer(layer);
+    // Piler i tegneretningen (taxi flow).
+    if (def.arrows && o.geometry.type === 'LineString') {
+      const coords = o.geometry.coordinates;
+      const arrows = L.layerGroup().addTo(this.map);
+      const redraw = () => drawArrows(this.map, arrows, coords, def.color);
+      redraw();
+      this.map.on('zoomend', redraw);
+      arrows.on('remove', () => this.map.off('zoomend', redraw));
+      handles.push(arrows);
+    }
+
     // Sidelengder på valgt område, som når man tegner.
     let sides: L.LayerGroup | null = null;
     if (selected && o.geometry.type === 'Polygon') {
@@ -360,6 +371,40 @@ export class PlanLayer {
       handles.push(move, rotate);
     }
     return group;
+  }
+}
+
+/** Piler langs en linje i tegneretningen, med fast avstand på skjermen. */
+const ARROW_SPACING_PX = 70;
+function drawArrows(map: L.Map, group: L.LayerGroup, coords: Position[], color: string): void {
+  group.clearLayers();
+  const pts = coords.map((c) => map.latLngToLayerPoint(toLatLng(c)));
+  let next = ARROW_SPACING_PX / 2;
+  let walked = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    const len = a.distanceTo(b);
+    const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+    while (next <= walked + len) {
+      const t = (next - walked) / (len || 1);
+      const at = map.layerPointToLatLng(L.point(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t));
+      group.addLayer(
+        L.marker(at, {
+          icon: L.divIcon({
+            className: 'flow-arrow',
+            html: `<svg width="16" height="16" viewBox="0 0 16 16" style="transform: rotate(${angle.toFixed(1)}deg)"><path d="M4 2 L12 8 L4 14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 2 L12 8 L4 14" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          }),
+          interactive: false,
+          keyboard: false,
+          pmIgnore: true,
+        } as L.MarkerOptions),
+      );
+      next += ARROW_SPACING_PX;
+    }
+    walked += len;
   }
 }
 
