@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getObjectType } from '../shared/catalog';
-import { canEditPlan, ROLE_LABELS, type Access, type Activity, type Geometry, type Plan, type PlanObject, type Version } from '../shared/types';
+import { canEditPlan, ROLE_LABELS, type Access, type Activity, type Geometry, type Plan, type PlanObject, type Presence, type Version } from '../shared/types';
 import { ApiError, api, shareToken, subscribe } from './api';
 import { Details } from './components/Details';
 import { Login } from './components/Login';
@@ -52,6 +52,9 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const [plan, setPlan] = useState<Plan | null>(null);
   const [objects, setObjects] = useState<PlanObject[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
+  // Andre innloggede brukeres musepeker og valg. Bare på PC med mus, og ikke via delingslenken.
+  const [presences, setPresences] = useState<Presence[]>([]);
+  const presenceOn = !!initialAccess.user && !initialAccess.viaShare && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [draw, setDraw] = useState<{ type: string; model?: string } | null>(null);
@@ -120,6 +123,12 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
         setAccess((a) => ({ ...a, canEdit: canEditPlan(a.user, e.plan) }));
       } else if (e.kind === 'activity') {
         setActivity((list) => [e.activity, ...list].slice(0, 300));
+      } else if (e.kind === 'presence-all') {
+        setPresences(e.presences);
+      } else if (e.kind === 'presence') {
+        setPresences((list) => [...list.filter((p) => p.id !== e.presence.id), e.presence]);
+      } else if (e.kind === 'presence-leave') {
+        setPresences((list) => list.filter((p) => p.id !== e.id));
       }
     }, reload);
   }, [reload]);
@@ -452,6 +461,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           lineTool={lineTool}
           onParallel={onParallel}
           onExtend={onExtend}
+          others={presenceOn ? presences.filter((p) => p.id !== access.user?.id) : null}
         />
 
         <button className="map-btn home-btn" title="Til hovedområdet" onClick={() => mapApi.current?.flyHome()}>

@@ -9,6 +9,7 @@ import { ROLES, ROLE_LABELS, canEditPlan, type Access, type PlanObject, type Pla
 import { LoginLimiter, MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from './auth.js';
 import type { DB } from './db.js';
 import { EventHub } from './events.js';
+import { PresenceStore } from './presence.js';
 import * as repo from './repo.js';
 import * as v from './validate.js';
 
@@ -43,6 +44,10 @@ export interface AppOptions {
 export function createApp(db: DB, opts: AppOptions = {}) {
   const app = express();
   const hub = new EventHub();
+  const presence = new PresenceStore();
+  hub.onUserGone = (id) => {
+    if (presence.remove(id)) hub.broadcastToUsers({ kind: 'presence-leave', id });
+  };
   const limiter = new LoginLimiter();
 
   app.set('trust proxy', 1);
@@ -402,7 +407,24 @@ export function createApp(db: DB, opts: AppOptions = {}) {
   // ---------- Sanntid ----------
 
   app.get('/api/events', requireRead, (req, res) => {
-    hub.add(res, req.ctx.viaShare);
+    const user = req.ctx.viaShare ? null : req.ctx.user;
+    hub.add(res, req.ctx.viaShare, user?.id ?? null);
+    // Musepekere og valgte objekter er bare for innloggede, ikke delingslenken.
+    if (user) hub.send(res, { kind: 'presence-all', presences: presence.all() });
+  });
+
+  // Musepeker og valgt objekt for innlogget bruker. Sendes videre til de andre innloggede.
+  app.post('/api/presence', requireUser, (req, res) => {
+    const body = (req.body ?? {}) as { cursor?: unknown; selectedId?: unknown };
+    const c = body.cursor;
+    const cursor =
+      Array.isArray(c) && c.length === 2 && c.every((n) => typeof n === 'number' && Number.isFinite(n)) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90
+        ? ([c[0], c[1]] as [number, number])
+        : null;
+    const selectedId = typeof body.selectedId === 'string' && body.selectedId.length <= 64 ? body.selectedId : null;
+    const p = presence.update(req.ctx.user!, cursor, selectedId);
+    hub.broadcastToUsers({ kind: 'presence', presence: p });
+    res.status(204).end();
   });
 
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Finnes ikke')));

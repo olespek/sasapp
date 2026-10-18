@@ -151,7 +151,30 @@ export function defaultProps(): ObjectProps {
 }
 
 /** Server-sendte hendelser for sanntidsoppdatering. */
+/** En innlogget brukers musepeker og valgte objekt (bare for innloggede, ikke delingslenken). */
+export interface Presence {
+  id: number;
+  name: string;
+  initials: string;
+  color: string;
+  /** Museposisjon i kartet, eller null når musen er utenfor kartet. */
+  cursor: Position | null;
+  selectedId: string | null;
+}
+
+/** Initialer fra navn: «Ole Amdal» blir «OA», ett navn gir én bokstav. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
 export type ServerEvent =
+  | { kind: 'presence'; presence: Presence }
+  | { kind: 'presence-all'; presences: Presence[] }
+  | { kind: 'presence-leave'; id: number }
   | { kind: 'object-upsert'; object: PlanObject }
   | { kind: 'object-delete'; id: string }
   | { kind: 'objects-reset' }

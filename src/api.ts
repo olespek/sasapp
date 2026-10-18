@@ -49,6 +49,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   me: () => call<Access>('GET', '/api/auth/me'),
+  presence: (body: { cursor: [number, number] | null; selectedId: string | null }) => call('POST', '/api/presence', body),
   login: (username: string, password: string) => call<{ user: User }>('POST', '/api/auth/login', { username, password }),
   logout: () => call('POST', '/api/auth/logout'),
   changePassword: (currentPassword: string, newPassword: string) =>

@@ -3,11 +3,12 @@ import { LayersControl, MapContainer, ScaleControl, TileLayer, useMap } from 're
 import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { getObjectType } from '../../shared/catalog';
-import type { Geometry, Plan, PlanObject } from '../../shared/types';
+import type { Geometry, Plan, PlanObject, Presence } from '../../shared/types';
 import { createDrawAssist, type DrawAssist } from './drawAssist';
 import { createRectDrag, type RectDrag } from './rectDrag';
 import { AltMeasure } from './AltMeasure';
 import { LineTools, type LineTool } from './LineTools';
+import { PresenceLayer } from './PresenceLayer';
 import { MeasureControl } from './MeasureControl';
 import { PlanLayer, pinIcon } from './planLayer';
 import { Icon } from '../icons';
@@ -36,6 +37,8 @@ interface Props {
   lineTool: LineTool | null;
   onParallel(typeId: string, geometry: Geometry): void;
   onExtend(id: string, geometry: Geometry): void;
+  /** Andre innloggede brukeres pekere og valg, eller null når funksjonen er av (mobil, delingslenke). */
+  others: Presence[] | null;
 }
 
 const BASE_KEY = 'sasapp.baselayer';
@@ -236,6 +239,7 @@ function Controller(props: Props) {
         drawing={!!props.drawType || !!props.lineTool}
       />
       <LineTools tool={props.lineTool} objects={props.objects} onParallel={props.onParallel} onExtend={props.onExtend} />
+      {props.others && <PresenceLayer others={props.others} objects={props.objects} selectedId={props.selectedId} />}
     </>
   );
 }

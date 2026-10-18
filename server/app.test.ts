@@ -193,6 +193,20 @@ describe('delingslenke', () => {
   });
 });
 
+describe('musepekere', () => {
+  it('bare innloggede kan sende peker og valg, ikke delingslenken', async () => {
+    const admin = await login('admin');
+    await admin.post('/api/share').set(H).send({ enabled: true }).expect(200);
+    const share = (await admin.get('/api/share').expect(200)).body;
+    await request(app).post(`/api/presence?share=${share.token}`).set(H).send({ cursor: [5.64, 58.88], selectedId: null }).expect(401);
+    await request(app).post('/api/presence').set(H).send({ cursor: [5.64, 58.88] }).expect(401);
+    const les = await login('les');
+    await les.post('/api/presence').set(H).send({ cursor: [5.64, 58.88], selectedId: 'abc' }).expect(204);
+    // Ugyldige verdier godtas ikke som posisjon.
+    await les.post('/api/presence').set(H).send({ cursor: [999, 'x'], selectedId: 5 }).expect(204);
+  });
+});
+
 describe('versjoner', () => {
   it('lagrer og gjenoppretter', async () => {
     const admin = await login('admin');

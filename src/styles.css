@@ -1602,3 +1602,38 @@ table.summary .sub {
     font-size: 12px;
   }
 }
+
+/* Andre brukeres musepeker med initialer. */
+.presence-cursor {
+  transition: transform 0.12s linear;
+  pointer-events: none;
+}
+
+.presence-cursor svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.presence-cursor span,
+.presence-tag span {
+  position: absolute;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.presence-cursor span {
+  left: 14px;
+  top: 16px;
+}
+
+.presence-tag span {
+  transform: translate(-50%, -50%);
+}
