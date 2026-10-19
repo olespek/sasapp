@@ -2,6 +2,7 @@
 // slik at resten ikke havner i bygget. Navnene er Lucides egne (kebab-case).
 
 import {
+  Archive,
   Accessibility,
   Ambulance,
   ArrowRight,
@@ -12,6 +13,7 @@ import {
   Cable,
   Camera,
   Car,
+  ChartColumn,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -34,7 +36,9 @@ import {
   Lightbulb,
   LocateFixed,
   Lock,
+  Layers,
   LayoutDashboard,
+  List,
   ListTodo,
   LockOpen,
   LogIn,
@@ -59,6 +63,8 @@ import {
   RotateCw,
   Route,
   Ruler,
+  ScrollText,
+  Settings,
   Shield,
   Speaker,
   SquareParking,
@@ -79,7 +85,17 @@ import {
   type IconNode,
 } from 'lucide';
 
+// Forbudsskilt (innkjøring forbudt): bare den hvite tverrstreken. Den røde sirkelen er selve punktet.
+const NoEntry: IconNode = [['rect', { x: '3', y: '9.5', width: '18', height: '5', rx: '1', fill: 'currentColor', stroke: 'none' }]];
+
 const ICONS: Record<string, IconNode> = {
+  archive: Archive,
+  'chart-column': ChartColumn,
+  layers: Layers,
+  list: List,
+  'no-entry': NoEntry,
+  'scroll-text': ScrollText,
+  settings: Settings,
   accessibility: Accessibility,
   ambulance: Ambulance,
   'arrow-right': ArrowRight,

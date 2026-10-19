@@ -35,11 +35,13 @@ export function pinIcon(def: ObjectTypeDef, o: PlanObject | null, selected: bool
   const tracked = !!def.tracking;
   const status = o && tracked ? `<span class="pin-status" style="background:${STATUS_COLORS[o.props.status]}"></span>` : '';
   const cls = ['pin', selected ? 'selected' : '', tracked && o?.props.status === 'idea' ? 'faded' : ''].join(' ');
-  const hText = def.hasHeight && o ? obstacleHeightText(o.props) : null;
+  const hText = (def.hasHeight && o ? obstacleHeightText(o.props) : null) ?? def.caption;
   const h = hText ? `<span class="pin-height">${escapeHtml(hText)}</span>` : '';
+  // Forbudsskiltet fyller hele punktet; vanlige ikoner er mindre.
+  const size = def.icon === 'no-entry' ? 26 : 16;
   return L.divIcon({
     className: 'pin-wrap',
-    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, 16, 2.25)}${status}${h}</div>`,
+    html: `<div class="${cls}" style="--c:${def.color}">${iconSvg(def.icon, size, 2.25)}${status}${h}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15],
     tooltipAnchor: [0, -16],

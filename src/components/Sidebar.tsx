@@ -32,43 +32,42 @@ interface Props {
   onClose(): void;
 }
 
-export function Sidebar(props: Props) {
-  const { tab, setTab, access } = props;
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'objects', label: 'Objekter' },
-    { id: 'summary', label: 'Oversikt' },
-    { id: 'layers', label: 'Lag' },
+/** Panelene i sidepanelet, i rekkefølgen de vises i ikonstripen til venstre. */
+export function sidebarTabs(access: Access): { id: Tab; label: string; icon: string }[] {
+  return [
+    { id: 'objects', label: 'Objekter', icon: 'list' },
+    { id: 'summary', label: 'Oversikt', icon: 'chart-column' },
+    { id: 'layers', label: 'Lag', icon: 'layers' },
     ...(access.user
       ? [
-          { id: 'activity' as Tab, label: 'Logg' },
-          { id: 'versions' as Tab, label: 'Versjoner' },
+          { id: 'activity' as Tab, label: 'Logg', icon: 'scroll-text' },
+          { id: 'versions' as Tab, label: 'Versjoner', icon: 'archive' },
         ]
       : []),
-    ...(access.isAdmin ? [{ id: 'admin' as Tab, label: 'Admin' }] : []),
+    ...(access.isAdmin ? [{ id: 'admin' as Tab, label: 'Admin', icon: 'settings' }] : []),
   ];
-  const current = tabs.some((t) => t.id === tab) ? tab : 'objects';
+}
+
+export function Sidebar(props: Props) {
+  const { tab, access } = props;
+  const tabs = sidebarTabs(access);
+  const current = tabs.find((t) => t.id === tab) ?? tabs[0];
 
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
-        <nav className="tabs" role="tablist">
-          {tabs.map((t) => (
-            <button key={t.id} role="tab" aria-selected={current === t.id} className={current === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <h3>{current.label}</h3>
         <button className="icon-btn sidebar-close" onClick={props.onClose} title="Lukk panel">
           <Icon name="x" size={18} />
         </button>
       </div>
       <div className="sidebar-body">
-        {current === 'objects' && <ObjectList {...props} />}
-        {current === 'summary' && <Summary objects={props.objects} onFocus={props.onFocus} />}
-        {current === 'layers' && <Layers {...props} />}
-        {current === 'activity' && <ActivityList activity={props.activity} objects={props.objects} onFocus={props.onFocus} />}
-        {current === 'versions' && <Versions {...props} />}
-        {current === 'admin' && <AdminPanel plan={props.plan} mapApi={props.mapApi} toast={props.toast} fail={props.fail} />}
+        {current.id === 'objects' && <ObjectList {...props} />}
+        {current.id === 'summary' && <Summary objects={props.objects} onFocus={props.onFocus} />}
+        {current.id === 'layers' && <Layers {...props} />}
+        {current.id === 'activity' && <ActivityList activity={props.activity} objects={props.objects} onFocus={props.onFocus} />}
+        {current.id === 'versions' && <Versions {...props} />}
+        {current.id === 'admin' && <AdminPanel plan={props.plan} mapApi={props.mapApi} toast={props.toast} fail={props.fail} />}
       </div>
     </aside>
   );

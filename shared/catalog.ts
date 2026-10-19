@@ -21,6 +21,8 @@ export interface ObjectTypeDef {
   weight?: number;
   /** For gjerder: lengden på ett element i meter, brukes til å beregne antall elementer. */
   panelLength?: number;
+  /** Fast tekst under punktet i kartet (f.eks. «No Entry»). */
+  caption?: string;
   /** Objektet har en høyde over bakken (meter), f.eks. hindringer. */
   hasHeight?: boolean;
   /** Typen følges opp med status, ansvarlig, leverandør, antall og frist (utstyr som bestilles og settes ut). */
@@ -117,7 +119,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true },
   { id: 'displaysenter', label: 'Displaysenter', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'monitor' },
   { id: 'taxiflow', label: 'Taxi flow', kind: 'line', group: 'operativ', color: '#65a30d', icon: 'arrow-right', dash: '10 8', weight: 4, arrows: true },
-  { id: 'noentry', label: 'No Entry', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'circle-minus' },
+  { id: 'noentry', label: 'No Entry', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'no-entry', caption: 'No Entry' },
 ];
 
 const BY_ID = new Map(OBJECT_TYPES.map((t) => [t.id, t]));

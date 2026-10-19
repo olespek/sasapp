@@ -58,9 +58,9 @@ export function Dashboard(props: Props) {
           {overdue > 0 && <Stat label="Over frist" value={overdue} accent />}
           <div className="stat">
             <span className="stat-value small-value">
-              <Icon name={plan.locked ? 'lock' : 'lock-open'} size={18} /> {plan.locked ? 'Låst' : 'Åpen'}
+              <Icon name={plan.locked ? 'lock' : 'lock-open'} size={18} /> {plan.locked ? 'Stengt' : 'Åpen'}
             </span>
-            <span className="stat-label">{plan.locked ? `Låst av ${plan.lockedBy ?? 'administrator'}` : 'Planen kan redigeres'}</span>
+            <span className="stat-label">{plan.locked ? `Stengt av ${plan.lockedBy ?? 'administrator'}` : 'Planen kan redigeres'}</span>
           </div>
         </div>
 

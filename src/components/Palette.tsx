@@ -17,7 +17,7 @@ export function TypeSwatch({ def }: { def: ObjectTypeDef }) {
   const shape = def.kind === 'line' ? 'line' : def.kind === 'polygon' ? 'area' : 'dot';
   return (
     <span className={`swatch ${shape}`} style={{ '--c': def.color } as React.CSSProperties}>
-      {shape !== 'line' && <Icon name={def.icon} size={14} strokeWidth={2.25} />}
+      {shape !== 'line' && <Icon name={def.icon} size={def.icon === 'no-entry' ? 22 : 14} strokeWidth={2.25} />}
     </span>
   );
 }

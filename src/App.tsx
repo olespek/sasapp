@@ -9,7 +9,7 @@ import { Logo } from './components/Logo';
 import { Icon } from './icons';
 import { PasswordDialog } from './components/PasswordDialog';
 import { Palette } from './components/Palette';
-import { Sidebar, type Tab } from './components/Sidebar';
+import { Sidebar, sidebarTabs, type Tab } from './components/Sidebar';
 import { PlanMap, type MapApi } from './map/PlanMap';
 import type { LineTool } from './map/LineTools';
 import { HistoryConflict, checkConflicts, fieldsOf, perform, type HistoryAction, type HistoryEntry } from './history';
@@ -357,10 +357,10 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const toggleLock = async () => {
     if (!plan) return;
     const locking = !plan.locked;
-    if (locking && !confirm('Låse planen? Da kan bare administratorer gjøre endringer.')) return;
+    if (locking && !confirm('Stenge planen? Da kan bare administratorer gjøre endringer.')) return;
     try {
       setPlan(await api.setLocked(locking));
-      toast(locking ? 'Planen er låst' : 'Planen er åpnet for redigering');
+      toast(locking ? 'Planen er stengt' : 'Planen er åpnet for redigering');
     } catch (err) {
       fail(err);
     }
@@ -374,21 +374,11 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   if (!plan) return <div className="center-screen muted">Laster plan …</div>;
 
   return (
-    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''} ${view === 'dashboard' ? 'view-dashboard' : ''}`}>
       <header className="topbar">
-        {view === 'map' && (
-          <button className="icon-btn" title="Meny" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <Icon name="menu" size={20} />
-          </button>
-        )}
         <div className="brand">
           <Logo />
-          <span className="brand-name">{plan.name}</span>
         </div>
-        <span className={`badge ${plan.locked ? 'locked' : 'open'}`} title={plan.locked && plan.lockedBy ? `Låst av ${plan.lockedBy}` : undefined}>
-          <Icon name={plan.locked ? 'lock' : 'lock-open'} size={12} strokeWidth={2.5} />
-          {plan.locked ? 'Låst' : 'Åpen for redigering'}
-        </span>
         {hasDashboard && (
           <nav className="seg view-switch" aria-label="Visning">
             <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')} title="Dashbord">
@@ -401,13 +391,23 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
             </button>
           </nav>
         )}
-        <div className="spacer" />
-        {view === 'map' && access.canEdit && !viewingVersion && (
-          <label className="switch" title="Slå på for å tegne og flytte objekter">
-            <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
-            <span>Redigering</span>
-          </label>
+        {access.isAdmin ? (
+          <button
+            className={`badge status ${plan.locked ? 'locked' : 'open'}`}
+            onClick={toggleLock}
+            title={plan.locked ? `Stengt${plan.lockedBy ? ` av ${plan.lockedBy}` : ''}. Klikk for å åpne planen for redigering.` : 'Klikk for å stenge planen. Da kan bare administratorer gjøre endringer.'}
+          >
+            <Icon name={plan.locked ? 'lock' : 'lock-open'} size={12} strokeWidth={2.5} />
+            {plan.locked ? 'Stengt' : 'Åpen'}
+          </button>
+        ) : (
+          <span className={`badge status ${plan.locked ? 'locked' : 'open'}`} title={plan.locked && plan.lockedBy ? `Stengt av ${plan.lockedBy}` : undefined}>
+            <Icon name={plan.locked ? 'lock' : 'lock-open'} size={12} strokeWidth={2.5} />
+            {plan.locked ? 'Stengt' : 'Åpen'}
+          </span>
         )}
+        <div className="topbar-title">{plan.name}</div>
+        <div className="spacer" />
         {view === 'map' && editing && (
           <div className="history-btns">
             <button
@@ -428,10 +428,11 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
             </button>
           </div>
         )}
-        {access.isAdmin && (
-          <button className="btn" onClick={toggleLock}>
-            {plan.locked ? 'Lås opp' : 'Lås plan'}
-          </button>
+        {view === 'map' && access.canEdit && !viewingVersion && (
+          <label className="switch" title="Slå på for å tegne og flytte objekter">
+            <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
+            <span>Redigering</span>
+          </label>
         )}
         {access.user ? (
           <div className="user-menu">
@@ -442,6 +443,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
               </summary>
               <div className="menu">
                 <div className="muted small">{ROLE_LABELS[access.user.role]}</div>
+                {access.isAdmin && <button onClick={toggleLock}>{plan.locked ? 'Åpne planen for redigering' : 'Steng planen'}</button>}
                 <button onClick={() => setPasswordOpen(true)}>Bytt passord</button>
                 <button onClick={logout}>Logg ut</button>
               </div>
@@ -451,6 +453,30 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           <span className="badge">Kun visning</span>
         )}
       </header>
+
+      <nav className="rail" aria-label="Paneler">
+        {sidebarTabs(access).map((t) => {
+          const active = sidebarOpen && tab === t.id;
+          return (
+            <button
+              key={t.id}
+              className={active ? 'active' : ''}
+              title={t.label}
+              aria-pressed={active}
+              onClick={() => {
+                if (active) setSidebarOpen(false);
+                else {
+                  setTab(t.id);
+                  setSidebarOpen(true);
+                }
+              }}
+            >
+              <Icon name={t.icon} size={20} />
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {view === 'dashboard' && access.user && (
         <Dashboard
@@ -534,7 +560,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           </div>
         )}
         {!viewingVersion && plan.locked && !access.isAdmin && access.user && access.user.role !== 'viewer' && (
-          <div className="banner subtle">Planen er låst av {plan.lockedBy ?? 'administrator'}. Endringer er ikke mulig nå.</div>
+          <div className="banner subtle">Planen er stengt av {plan.lockedBy ?? 'administrator'}. Endringer er ikke mulig nå.</div>
         )}
 
         {editing && (
