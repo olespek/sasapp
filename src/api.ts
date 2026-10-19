@@ -1,6 +1,8 @@
 import type {
   Access,
   Activity,
+  Note,
+  NoteKind,
   Plan,
   PlanObject,
   PlanResponse,
@@ -71,6 +73,11 @@ export const api = {
   createVersion: (name: string, note: string) => call<VersionSummary>('POST', '/api/versions', { name, note }),
   restoreVersion: (id: number) => call('POST', `/api/versions/${id}/restore`),
   deleteVersion: (id: number) => call('DELETE', `/api/versions/${id}`),
+
+  notes: () => call<Note[]>('GET', '/api/notes'),
+  createNote: (kind: NoteKind, text: string) => call<Note>('POST', '/api/notes', { kind, text }),
+  updateNote: (id: number, patch: { text?: string; kind?: NoteKind; done?: boolean }) => call<Note>('PATCH', `/api/notes/${id}`, patch),
+  deleteNote: (id: number) => call('DELETE', `/api/notes/${id}`),
 
   users: () => call<User[]>('GET', '/api/users'),
   createUser: (u: { username: string; name: string; role: string; password: string }) => call<User>('POST', '/api/users', u),

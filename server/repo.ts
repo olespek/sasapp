@@ -1,7 +1,7 @@
 // Datatilgang. Alle funksjoner er synkrone (node:sqlite).
 
 import { randomBytes } from 'node:crypto';
-import type { Activity, Plan, PlanObject, Role, ShareSettings, User, Version, VersionSummary } from '../shared/types.js';
+import type { Activity, Note, NoteKind, Plan, PlanObject, Role, ShareSettings, User, Version, VersionSummary } from '../shared/types.js';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, transaction, type DB } from './db.js';
 
 const now = () => new Date().toISOString();
@@ -257,4 +257,65 @@ export function listActivity(db: DB, limit = 200): Activity[] {
   return (
     db.prepare('SELECT id, user, action, object_id AS objectId, summary, at FROM activity ORDER BY id DESC LIMIT ?').all(limit) as unknown as Activity[]
   ).map((a) => ({ ...a }));
+}
+
+// ---------- Notater ----------
+
+interface NoteRow {
+  id: number;
+  kind: NoteKind;
+  text: string;
+  done: number;
+  done_by: string | null;
+  done_at: string | null;
+  created_by: string;
+  created_by_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+const toNote = (r: NoteRow): Note => ({
+  id: r.id,
+  kind: r.kind,
+  text: r.text,
+  done: r.done === 1,
+  doneBy: r.done_by,
+  doneAt: r.done_at,
+  createdBy: r.created_by,
+  createdById: r.created_by_id,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+});
+
+export function listNotes(db: DB, limit = 500): Note[] {
+  return (db.prepare('SELECT * FROM notes ORDER BY id DESC LIMIT ?').all(limit) as unknown as NoteRow[]).map(toNote);
+}
+
+export function getNote(db: DB, id: number): Note | undefined {
+  const r = db.prepare('SELECT * FROM notes WHERE id = ?').get(id) as NoteRow | undefined;
+  return r && toNote(r);
+}
+
+export function createNote(db: DB, n: { kind: NoteKind; text: string; user: User }): Note {
+  const at = now();
+  const res = db
+    .prepare('INSERT INTO notes (kind, text, created_by, created_by_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(n.kind, n.text, n.user.name, n.user.id, at, at);
+  return getNote(db, Number(res.lastInsertRowid))!;
+}
+
+export function saveNote(db: DB, n: Note): void {
+  db.prepare('UPDATE notes SET kind = ?, text = ?, done = ?, done_by = ?, done_at = ?, updated_at = ? WHERE id = ?').run(
+    n.kind,
+    n.text,
+    n.done ? 1 : 0,
+    n.doneBy,
+    n.doneAt,
+    n.updatedAt,
+    n.id,
+  );
+}
+
+export function deleteNote(db: DB, id: number): boolean {
+  return Number(db.prepare('DELETE FROM notes WHERE id = ?').run(id).changes) > 0;
 }

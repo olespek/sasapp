@@ -65,6 +65,19 @@ const MIGRATIONS: string[] = [
   // Hindringer: høyde i meter (kortvarig første versjon) blir AGL i fot.
   `UPDATE objects SET props = json_set(json_remove(props, '$.height'), '$.aglFt', CAST(round(json_extract(props, '$.height') * 3.28084) AS INTEGER))
    WHERE type = 'obstacle' AND json_extract(props, '$.height') IS NOT NULL;`,
+  // Notater til «neste mann».
+  `CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL CHECK (kind IN ('todo','info')),
+    text TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0,
+    done_by TEXT,
+    done_at TEXT,
+    created_by TEXT NOT NULL,
+    created_by_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );`,
 ];
 
 export function openDb(path: string): DB {

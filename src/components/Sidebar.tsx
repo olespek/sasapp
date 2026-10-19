@@ -75,7 +75,7 @@ export function Sidebar(props: Props) {
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
-const isOverdue = (o: PlanObject) => hasTracking(o.type) && !!o.props.dueDate && o.props.dueDate < today() && !['done', 'installed'].includes(o.props.status);
+export const isOverdue = (o: PlanObject) => hasTracking(o.type) && !!o.props.dueDate && o.props.dueDate < today() && !['done', 'installed'].includes(o.props.status);
 
 function label(o: PlanObject): string {
   if (o.name) return o.name;
@@ -186,7 +186,7 @@ function ObjectList({ objects, selectedId, onFocus }: Props) {
 
 // ---------- Oppsummering ----------
 
-function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: string): void }) {
+export function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(id: string): void }) {
   const byType = useMemo(() => {
     const map = new Map<string, { count: number; qty: number; length: number; area: number; panels: number }>();
     for (const o of objects) {
@@ -354,12 +354,12 @@ function Layers({ objects, hiddenGroups, setHiddenGroups, showLabels, setShowLab
 
 // ---------- Aktivitet ----------
 
-function ActivityList({ activity, objects, onFocus }: { activity: Activity[]; objects: PlanObject[]; onFocus(id: string): void }) {
+export function ActivityList({ activity, objects, onFocus, limit }: { activity: Activity[]; objects: PlanObject[]; onFocus(id: string): void; limit?: number }) {
   const exists = new Set(objects.map((o) => o.id));
   if (activity.length === 0) return <p className="muted">Ingen aktivitet ennå.</p>;
   return (
     <ul className="activity">
-      {activity.map((a) => (
+      {activity.slice(0, limit).map((a) => (
         <li key={a.id}>
           <div>
             {a.objectId && exists.has(a.objectId) ? <a onClick={() => onFocus(a.objectId!)}>{a.summary}</a> : a.summary}
@@ -375,7 +375,7 @@ function ActivityList({ activity, objects, onFocus }: { activity: Activity[]; ob
 
 // ---------- Versjoner ----------
 
-function Versions({ access, viewingVersion, setViewingVersion, toast, fail }: Props) {
+export function Versions({ access, viewingVersion, setViewingVersion, toast, fail }: Pick<Props, 'access' | 'viewingVersion' | 'setViewingVersion' | 'toast' | 'fail'>) {
   const [list, setList] = useState<VersionSummary[]>([]);
   const [name, setName] = useState('');
   const [note, setNote] = useState('');

@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { getAircraft } from '../shared/aircraft.js';
 import { getObjectType } from '../shared/catalog.js';
-import { ROLES, ROLE_LABELS, canEditPlan, type Access, type PlanObject, type PlanResponse, type Role, type User } from '../shared/types.js';
+import { ROLES, ROLE_LABELS, canEditPlan, type Access, type Note, type NoteKind, type PlanObject, type PlanResponse, type Role, type User } from '../shared/types.js';
 import { LoginLimiter, MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from './auth.js';
 import type { DB } from './db.js';
 import { EventHub } from './events.js';
@@ -324,6 +324,69 @@ export function createApp(db: DB, opts: AppOptions = {}) {
     const version = repo.getVersion(db, Number(req.params.id));
     if (!version || !repo.deleteVersion(db, version.id)) throw new HttpError(404, 'Versjonen finnes ikke');
     log(req, 'version-delete', `Slettet versjon «${version.name}»`);
+    res.json({ ok: true });
+  });
+
+  // ---------- Notater ----------
+  // Alle innloggede kan skrive notater og krysse av oppgaver, også når planen er låst. Bare den som skrev
+  // notatet (eller en administrator) kan endre teksten eller slette det. Ikke tilgjengelig via delingslenken.
+
+  const noteText = (t: unknown): string => {
+    const text = typeof t === 'string' ? t.trim() : '';
+    if (!text) throw new HttpError(400, 'Notatet kan ikke være tomt');
+    if (text.length > 4000) throw new HttpError(400, 'Notatet er for langt (maks 4000 tegn)');
+    return text;
+  };
+  const noteKind = (k: unknown): NoteKind => {
+    if (k !== 'todo' && k !== 'info') throw new HttpError(400, 'Ugyldig notattype');
+    return k;
+  };
+  const findNote = (req: Request) => {
+    const note = repo.getNote(db, Number(req.params.id));
+    if (!note) throw new HttpError(404, 'Notatet finnes ikke');
+    return note;
+  };
+  const canChangeNote = (req: Request, note: Note) => req.ctx.user!.role === 'admin' || req.ctx.user!.id === note.createdById;
+
+  app.get('/api/notes', requireUser, (_req, res) => {
+    res.json(repo.listNotes(db));
+  });
+
+  app.post('/api/notes', requireUser, (req, res) => {
+    const note = repo.createNote(db, { kind: noteKind(req.body?.kind ?? 'info'), text: noteText(req.body?.text), user: req.ctx.user! });
+    hub.broadcastToUsers({ kind: 'note-upsert', note });
+    res.status(201).json(note);
+  });
+
+  app.patch('/api/notes/:id', requireUser, (req, res) => {
+    const note = findNote(req);
+    const body = req.body ?? {};
+    const updated: Note = { ...note };
+    if (body.text !== undefined || body.kind !== undefined) {
+      if (!canChangeNote(req, note)) throw new HttpError(403, 'Bare den som skrev notatet kan endre det');
+      if (body.text !== undefined) updated.text = noteText(body.text);
+      if (body.kind !== undefined) updated.kind = noteKind(body.kind);
+    }
+    if (body.done !== undefined) {
+      const done = body.done === true;
+      if (done !== note.done) {
+        updated.done = done;
+        updated.doneBy = done ? who(req) : null;
+        updated.doneAt = done ? new Date().toISOString() : null;
+      }
+    }
+    if (updated.kind === 'info') Object.assign(updated, { done: false, doneBy: null, doneAt: null });
+    updated.updatedAt = new Date().toISOString();
+    repo.saveNote(db, updated);
+    hub.broadcastToUsers({ kind: 'note-upsert', note: updated });
+    res.json(updated);
+  });
+
+  app.delete('/api/notes/:id', requireUser, (req, res) => {
+    const note = findNote(req);
+    if (!canChangeNote(req, note)) throw new HttpError(403, 'Bare den som skrev notatet kan slette det');
+    repo.deleteNote(db, note.id);
+    hub.broadcastToUsers({ kind: 'note-delete', id: note.id });
     res.json({ ok: true });
   });
 

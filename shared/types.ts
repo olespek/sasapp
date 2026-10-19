@@ -111,6 +111,23 @@ export interface Activity {
   at: string;
 }
 
+/** Notat til «neste mann»: en oppgave som skal gjøres, eller info om hva som er gjort. */
+export type NoteKind = 'todo' | 'info';
+
+export interface Note {
+  id: number;
+  kind: NoteKind;
+  text: string;
+  /** Bare for oppgaver: er den gjort, og av hvem. */
+  done: boolean;
+  doneBy: string | null;
+  doneAt: string | null;
+  createdBy: string;
+  createdById: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ShareSettings {
   enabled: boolean;
   token: string;
@@ -179,4 +196,6 @@ export type ServerEvent =
   | { kind: 'object-delete'; id: string }
   | { kind: 'objects-reset' }
   | { kind: 'plan'; plan: Plan }
-  | { kind: 'activity'; activity: Activity };
+  | { kind: 'activity'; activity: Activity }
+  | { kind: 'note-upsert'; note: Note }
+  | { kind: 'note-delete'; id: number };

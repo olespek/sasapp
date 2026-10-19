@@ -207,6 +207,33 @@ describe('musepekere', () => {
   });
 });
 
+describe('notater', () => {
+  it('alle innloggede kan skrive og krysse av, bare forfatter eller admin kan endre og slette', async () => {
+    const admin = await login('admin');
+    await admin.post('/api/share').set(H).send({ enabled: true }).expect(200);
+    const share = (await admin.get('/api/share').expect(200)).body;
+    await request(app).get(`/api/notes?share=${share.token}`).expect(401);
+    await request(app).post(`/api/notes?share=${share.token}`).set(H).send({ kind: 'info', text: 'x' }).expect(401);
+
+    const les = await login('les');
+    const red = await login('red');
+    await les.post('/api/notes').set(H).send({ kind: 'todo', text: '   ' }).expect(400);
+    await les.post('/api/notes').set(H).send({ kind: 'feil', text: 'x' }).expect(400);
+    const note = (await les.post('/api/notes').set(H).send({ kind: 'todo', text: 'Sett opp gjerde ved port 3' }).expect(201)).body;
+    expect(note).toMatchObject({ kind: 'todo', done: false, createdBy: 'les' });
+
+    // Planen låst: notater virker fortsatt.
+    await admin.post('/api/plan/lock').set(H).send({ locked: true }).expect(200);
+    const done = (await red.patch(`/api/notes/${note.id}`).set(H).send({ done: true }).expect(200)).body;
+    expect(done).toMatchObject({ done: true, doneBy: 'red' });
+    await red.patch(`/api/notes/${note.id}`).set(H).send({ text: 'Endret' }).expect(403);
+    await red.delete(`/api/notes/${note.id}`).set(H).expect(403);
+    await les.patch(`/api/notes/${note.id}`).set(H).send({ text: 'Endret' }).expect(200);
+    await admin.delete(`/api/notes/${note.id}`).set(H).expect(200);
+    expect((await les.get('/api/notes').expect(200)).body).toHaveLength(0);
+  });
+});
+
 describe('versjoner', () => {
   it('lagrer og gjenoppretter', async () => {
     const admin = await login('admin');

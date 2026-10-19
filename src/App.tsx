@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getObjectType } from '../shared/catalog';
-import { canEditPlan, ROLE_LABELS, type Access, type Activity, type Geometry, type Plan, type PlanObject, type Presence, type Version } from '../shared/types';
+import { canEditPlan, ROLE_LABELS, type Access, type Activity, type Geometry, type Note, type Plan, type PlanObject, type Presence, type Version } from '../shared/types';
 import { ApiError, api, shareToken, subscribe } from './api';
+import { Dashboard } from './components/Dashboard';
 import { Details } from './components/Details';
 import { Login } from './components/Login';
 import { Logo } from './components/Logo';
@@ -52,6 +53,10 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   const [plan, setPlan] = useState<Plan | null>(null);
   const [objects, setObjects] = useState<PlanObject[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  // Innloggede kommer først til dashbordet. Delingslenken går rett til kartet.
+  const hasDashboard = !!initialAccess.user && !initialAccess.viaShare;
+  const [view, setView] = useState<'dashboard' | 'map'>(hasDashboard ? 'dashboard' : 'map');
   // Andre innloggede brukeres musepeker og valg. Bare på PC med mus, og ikke via delingslenken.
   const [presences, setPresences] = useState<Presence[]>([]);
   const presenceOn = !!initialAccess.user && !initialAccess.viaShare && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -90,13 +95,21 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
     [toast, access.viaShare, onLoggedOut],
   );
 
+  const upsertNote = useCallback((n: Note) => {
+    setNotes((list) => (list.some((x) => x.id === n.id) ? list.map((x) => (x.id === n.id ? n : x)) : [n, ...list].sort((a, b) => b.id - a.id)));
+  }, []);
+
   const reload = useCallback(async () => {
     try {
       const res = await api.plan();
       setPlan(res.plan);
       setObjects(res.objects);
       setAccess(res.access);
-      if (res.access.user) setActivity(await api.activity());
+      if (res.access.user) {
+        const [act, nts] = await Promise.all([api.activity(), api.notes()]);
+        setActivity(act);
+        setNotes(nts);
+      }
     } catch (err) {
       fail(err);
     }
@@ -123,6 +136,10 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
         setAccess((a) => ({ ...a, canEdit: canEditPlan(a.user, e.plan) }));
       } else if (e.kind === 'activity') {
         setActivity((list) => [e.activity, ...list].slice(0, 300));
+      } else if (e.kind === 'note-upsert') {
+        upsertNote(e.note);
+      } else if (e.kind === 'note-delete') {
+        setNotes((list) => list.filter((n) => n.id !== e.id));
       } else if (e.kind === 'presence-all') {
         setPresences(e.presences);
       } else if (e.kind === 'presence') {
@@ -131,7 +148,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
         setPresences((list) => list.filter((p) => p.id !== e.id));
       }
     }, reload);
-  }, [reload]);
+  }, [reload, upsertNote]);
 
   const canEdit = access.canEdit && !viewingVersion;
   const editing = canEdit && editMode;
@@ -331,6 +348,7 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   };
 
   const focus = (id: string) => {
+    setView('map');
     setSelectedId(id);
     mapApi.current?.focus(id);
     if (window.innerWidth <= 900) setSidebarOpen(false);
@@ -358,9 +376,11 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
   return (
     <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <header className="topbar">
-        <button className="icon-btn" title="Meny" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <Icon name="menu" size={20} />
-        </button>
+        {view === 'map' && (
+          <button className="icon-btn" title="Meny" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Icon name="menu" size={20} />
+          </button>
+        )}
         <div className="brand">
           <Logo />
           <span className="brand-name">{plan.name}</span>
@@ -369,14 +389,26 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           <Icon name={plan.locked ? 'lock' : 'lock-open'} size={12} strokeWidth={2.5} />
           {plan.locked ? 'Låst' : 'Åpen for redigering'}
         </span>
+        {hasDashboard && (
+          <nav className="seg view-switch" aria-label="Visning">
+            <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')} title="Dashbord">
+              <Icon name="layout-dashboard" size={16} />
+              <span>Dashbord</span>
+            </button>
+            <button className={view === 'map' ? 'active' : ''} onClick={() => setView('map')} title="Kart">
+              <Icon name="map" size={16} />
+              <span>Kart</span>
+            </button>
+          </nav>
+        )}
         <div className="spacer" />
-        {access.canEdit && !viewingVersion && (
+        {view === 'map' && access.canEdit && !viewingVersion && (
           <label className="switch" title="Slå på for å tegne og flytte objekter">
             <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
             <span>Redigering</span>
           </label>
         )}
-        {editing && (
+        {view === 'map' && editing && (
           <div className="history-btns">
             <button
               className="icon-btn"
@@ -419,6 +451,31 @@ function Planner({ initialAccess, onLoggedOut }: { initialAccess: Access; onLogg
           <span className="badge">Kun visning</span>
         )}
       </header>
+
+      {view === 'dashboard' && access.user && (
+        <Dashboard
+          access={{ ...access, user: access.user }}
+          plan={plan}
+          objects={objects}
+          activity={activity}
+          notes={notes}
+          viewingVersion={viewingVersion}
+          setViewingVersion={(v) => {
+            setViewingVersion(v);
+            setSelectedId(null);
+            if (v) setView('map');
+          }}
+          onNoteChange={upsertNote}
+          onNoteDelete={(id) => setNotes((list) => list.filter((n) => n.id !== id))}
+          onFocus={(id) => {
+            setViewingVersion(null);
+            focus(id);
+          }}
+          onOpenMap={() => setView('map')}
+          toast={toast}
+          fail={fail}
+        />
+      )}
 
       <Sidebar
         tab={tab}
