@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AIRCRAFT, getAircraft } from '../../shared/aircraft';
-import { GROUPS, OBJECT_TYPES, getObjectType, hasTracking, panelCount } from '../../shared/catalog';
+import { GROUPS, OBJECT_TYPES, capacityText, getObjectType, hasTracking, panelCount } from '../../shared/catalog';
 import { formatLength, measure } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, obstacleHeightText, type Access, type Activity, type Plan, type PlanObject, type Status, type Version, type VersionSummary } from '../../shared/types';
 import { api } from '../api';
@@ -269,6 +269,7 @@ export function Summary({ objects, onFocus }: { objects: PlanObject[]; onFocus(i
                       <td className="num">
                         {t.kind === 'point' ? `${r.qty} stk` : t.kind === 'line' ? formatLength(r.length) : t.kind === 'polygon' ? `${m2(r.area)} m²` : `${r.count} fly`}
                         {t.kind === 'polygon' && r.area >= 1000 && <span className="sub">{daa(r.area)} daa</span>}
+                        {capacityText(t, r.area) && <span className="sub">{capacityText(t, r.area)}</span>}
                         {t.kind === 'line' && t.panelLength && <span className="sub">ca. {r.panels} elementer</span>}
                       </td>
                     </tr>

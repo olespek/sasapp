@@ -54,7 +54,7 @@ export function Dashboard(props: Props) {
         <div className="stat-row">
           <Stat label="Objekter i planen" value={objects.length - aircraft} />
           <Stat label="Fly" value={aircraft} />
-          <Stat label="Må gjøres" value={openTodos} accent={openTodos > 0} />
+          <Stat label="To do" value={openTodos} accent={openTodos > 0} />
           {overdue > 0 && <Stat label="Over frist" value={overdue} accent />}
           <div className="stat">
             <span className="stat-value small-value">
@@ -67,7 +67,7 @@ export function Dashboard(props: Props) {
         <div className="dash-grid">
           <section className="dash-card dash-notes">
             <h2>
-              <Icon name="sticky-note" size={18} /> Notater til neste mann
+              <Icon name="sticky-note" size={18} /> Notater
             </h2>
             <Notes notes={notes} user={access.user} onChange={props.onNoteChange} onDelete={props.onNoteDelete} fail={props.fail} />
           </section>

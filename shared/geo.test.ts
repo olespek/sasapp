@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AIRCRAFT, AIRCRAFT_CATEGORIES, aircraftShapes } from './aircraft.js';
 import { FULL_OUTLINES, OUTLINES } from './aircraftOutlines.js';
-import { getObjectType, panelCount } from './catalog.js';
+import { capacityText, getObjectType, panelCount } from './catalog.js';
 import { bearing, closestBetween, constrainAngle, distance, mergeLines, nearestOnLine, offset, offsetLine, orientedBox, polygonArea, resizePolygon, shapeCenter, transformGeometry } from './geo.js';
 import type { Position } from './types.js';
 
@@ -216,5 +216,12 @@ describe('lengde og bredde på områder', () => {
     expect(after.width).toBeCloseTo(10, 1);
     expect(after.angle).toBeCloseTo(before.angle, 1);
     expect(distance(after.center, before.center)).toBeLessThan(0.05);
+  });
+});
+
+describe('kapasitet', () => {
+  it('bilparkering regner ca. 25 m² per bil, andre områder har ingen kapasitet', () => {
+    expect(capacityText(getObjectType('parkering'), 2510)).toBe('ca. 100 biler');
+    expect(capacityText(getObjectType('publikumsomrade'), 2510)).toBeNull();
   });
 });

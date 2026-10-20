@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { aircraftByCategory, getAircraft } from '../../shared/aircraft';
-import { ACTIVE_TYPES, getObjectType, panelCount } from '../../shared/catalog';
+import { ACTIVE_TYPES, capacityText, getObjectType, panelCount } from '../../shared/catalog';
 import { formatArea, formatLength, measure, orientedBox, resizePolygon } from '../../shared/geo';
 import { STATUSES, STATUS_COLORS, STATUS_LABELS, type ObjectProps, type PlanObject } from '../../shared/types';
 import type { api } from '../api';
@@ -126,7 +126,8 @@ export function Details({ object: o, canEdit, canEditAtAll, onEnableEdit, onUpda
           <div className="measure">
             {m.area !== undefined ? (
               <>
-                Areal {formatArea(m.area)} · omkrets {formatLength(m.length ?? 0)}
+                Areal {formatArea(m.area)}
+                {capacityText(def, m.area) && ` · ${capacityText(def, m.area)}`} · omkrets {formatLength(m.length ?? 0)}
               </>
             ) : (
               <>

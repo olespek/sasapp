@@ -21,6 +21,8 @@ export interface ObjectTypeDef {
   weight?: number;
   /** For gjerder: lengden på ett element i meter, brukes til å beregne antall elementer. */
   panelLength?: number;
+  /** Område: anslått kapasitet, f.eks. 25 m² per bil inkludert kjørearealet mellom radene. */
+  perUnit?: { m2: number; unit: string };
   /** Fast tekst under punktet i kartet (f.eks. «No Entry»). */
   caption?: string;
   /** Objektet har en høyde over bakken (meter), f.eks. hindringer. */
@@ -97,7 +99,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'hoyttaler', label: 'Høyttaler', kind: 'point', group: 'kommersielt', color: '#7c3aed', icon: 'speaker', tracking: true },
 
   // Logistikk
-  { id: 'parkering', label: 'Bilparkering', kind: 'polygon', group: 'logistikk', color: '#0b5fd6', icon: 'car' },
+  { id: 'parkering', label: 'Bilparkering', kind: 'polygon', group: 'logistikk', color: '#0b5fd6', icon: 'car', perUnit: { m2: 25, unit: 'biler' } },
   { id: 'hcparkering', label: 'HC-parkering', kind: 'polygon', group: 'logistikk', color: '#1e3a8a', icon: 'accessibility' },
   { id: 'lager', label: 'Lager/rigg', kind: 'polygon', group: 'logistikk', color: '#92400e', icon: 'package' },
   { id: 'kjorevei', label: 'Kjørevei', kind: 'line', group: 'logistikk', color: '#334155', icon: 'truck', dash: '14 8', retired: true },
@@ -117,7 +119,7 @@ export const OBJECT_TYPES: ObjectTypeDef[] = [
   { id: 'displayline', label: 'Display line #3', kind: 'line', group: 'operativ', color: '#ef3b3b', icon: 'plane-takeoff', dash: '16 6 2 6', weight: 3 },
   { id: 'flyparkering', label: 'Flyparkering', kind: 'polygon', group: 'operativ', color: '#1d4ed8', icon: 'plane-landing', dash: '6 4' },
   { id: 'obstacle', label: 'Obstacle', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'radio-tower', hasHeight: true },
-  { id: 'displaysenter', label: 'Displaysenter', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'monitor' },
+  { id: 'displaysenter', label: 'Displaysenter', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'crosshair' },
   { id: 'taxiflow', label: 'Taxi flow', kind: 'line', group: 'operativ', color: '#65a30d', icon: 'arrow-right', dash: '10 8', weight: 4, arrows: true },
   { id: 'noentry', label: 'No Entry', kind: 'point', group: 'operativ', color: '#dc2626', icon: 'no-entry', caption: 'No Entry' },
 ];
@@ -147,4 +149,10 @@ export function geometryTypeFor(kind: ObjectKind): 'Point' | 'LineString' | 'Pol
   if (kind === 'line') return 'LineString';
   if (kind === 'polygon') return 'Polygon';
   return 'Point';
+}
+
+/** «ca. 120 biler» for områder med kapasitet (f.eks. bilparkering), ellers null. */
+export function capacityText(def: ObjectTypeDef | undefined, area: number): string | null {
+  if (!def?.perUnit) return null;
+  return `ca. ${Math.floor(area / def.perUnit.m2).toLocaleString('nb-NO')} ${def.perUnit.unit}`;
 }

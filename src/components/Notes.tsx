@@ -58,10 +58,10 @@ export function Notes({ notes, user, onChange, onDelete, fail }: Props) {
       <form className="note-form card-inset" onSubmit={submit}>
         <div className="seg" role="radiogroup" aria-label="Type notat">
           <button type="button" role="radio" aria-checked={kind === 'todo'} className={kind === 'todo' ? 'active' : ''} onClick={() => setKind('todo')}>
-            <Icon name="list-todo" size={14} /> Må gjøres
+            <Icon name="list-todo" size={14} /> To do
           </button>
           <button type="button" role="radio" aria-checked={kind === 'info'} className={kind === 'info' ? 'active' : ''} onClick={() => setKind('info')}>
-            <Icon name="info" size={14} /> Info / gjort
+            <Icon name="info" size={14} /> Notat
           </button>
         </div>
         <textarea
@@ -77,7 +77,7 @@ export function Notes({ notes, user, onChange, onDelete, fail }: Props) {
         <div className="row between">
           <span className="muted small">Ctrl/⌘+Enter for å lagre</span>
           <button className="btn primary small" disabled={!text.trim() || busy}>
-            Legg til notat
+            Legg til
           </button>
         </div>
       </form>
@@ -87,7 +87,7 @@ export function Notes({ notes, user, onChange, onDelete, fail }: Props) {
           Alle ({notes.length})
         </button>
         <button className={filter === 'open' ? 'active' : ''} onClick={() => setFilter('open')}>
-          Må gjøres ({open.length})
+          To do ({open.length})
         </button>
         <button className={filter === 'done' ? 'active' : ''} onClick={() => setFilter('done')}>
           Gjort ({done.length})
@@ -149,7 +149,7 @@ function NoteItem({ note, canChange, onChange, onDelete, fail }: { note: Note; c
             · {timeAgo(note.createdAt)}
           </span>
         </div>
-        <span className={`note-kind ${todo ? 'todo' : 'info'}`}>{todo ? 'Må gjøres' : 'Info'}</span>
+        <span className={`note-kind ${todo ? 'todo' : 'info'}`}>{todo ? 'To do' : 'Notat'}</span>
         {canChange && !editing && (
           <>
             <button
